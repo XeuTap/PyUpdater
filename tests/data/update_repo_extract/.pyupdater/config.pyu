@@ -1,0 +1,74 @@
+{
+  "version_meta": {
+    "signature": "SFZSIMCiVl1AdjRvIAq5Qyxtk3Yk83SX8AgSFASsJT0RQ+BsNUFuRZ0OVXbnBXoNHuAfhrb7bzZhMeaxQCVSDg",
+    "updates": {
+      "Acme": {
+        "4.1.0.2.0": {
+          "win": {
+            "file_hash": "509daed504c7ab7eecf5afad68718b284d57a5f23b5820e6574ee00dc43b793d",
+            "file_size": 2819,
+            "filename": "Acme-win-4.1.zip",
+            "patch_name": "Acme-win-stable-28",
+            "patch_hash": "4ff5ebb2ec6bb03b5f62beddb070ed912fc63f89fbb5e4aa2d6bb469597e70cf",
+            "patch_size": 2571
+          }
+        },
+        "4.2.0.2.0": {
+          "win": {
+            "file_hash": "8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85",
+            "file_size": 22,
+            "filename": "Acme-win-4.2.zip",
+            "patch_name": "Acme-win-stable-29",
+            "patch_hash": "fda203c1e22a62d8f53d5d0002c90d221d9e3fe619254046a20db0c2e63fa978",
+            "patch_size": 146
+          }
+        }
+      }
+    },
+    "latest": {
+      "Acme": {
+        "stable": {
+          "win": "4.2.0.2.0"
+        }
+      }
+    }
+  },
+  "count": 0,
+  "sync_threshold": 3,
+  "py_repo_config": {
+    "patches": {
+      "Acme": 29
+    },
+    "package": {
+      "Acme": {
+        "win": "4.2.0.2.0"
+      }
+    }
+  },
+  "app_config": {
+    "APP_NAME": "Acme",
+    "UPDATE_URLS": [
+      "http://localhost:8000/"
+    ],
+    "PLUGIN_CONFIGS": {},
+    "UPDATE_PATCHES": true,
+    "COMPANY_NAME": "Digital",
+    "CLIENT_CONFIG_PATH": [
+      "client_config.py"
+    ]
+  },
+  "keypack": {
+    "repo": {
+      "app_private": "M7o+RcxPuqKBHEka3LjbnjMQr+zYWm2t6cNk9giu7MM"
+    },
+    "client": {
+      "offline_public": "rRp4eJzzsPxN1nLXBOuLCqI33HWTridHKJpNnDSUlbU"
+    },
+    "upload": {
+      "app_public": "MEviIkxfr74822UoF97+RJ9GdS9eVtkKe4PKH2J3khA",
+      "signature": "WtNNMd2AsDlOIti1sFRylWJb/jyBOlfiF7eJPbSl/FNjvnQ+0L/7ooaDYAzRWsHCs58JyB7XYMcyfKSwDjO9Cg"
+    }
+  },
+  "config_dir": ".pyupdater",
+  "filename": "C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_extract\\.pyupdater\\config.pyu"
+}
