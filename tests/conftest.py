@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 # OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------
+import functools
 import os
 import tempfile
 import threading
@@ -39,11 +40,13 @@ from pyupdater.client import Client
 from pyupdater.core.key_handler.keys import Keys
 from pyupdater.utils.config import ConfigManager
 from pyupdater.utils.storage import Storage
-from tconfig import TConfig
+from tests.tconfig import TConfig
+
 
 @pytest.fixture()
 def shared_datadir():
     return Path(os.path.dirname(__file__) + os.sep + "data")
+
 
 @pytest.fixture
 def cleandir():
@@ -115,7 +118,8 @@ def simpleserver():
             if self._server is not None:
                 return
             SocketServer.TCPServer.allow_reuse_address = True
-            httpd = SocketServer.TCPServer(("", port), RequestHandler)
+            handler = functools.partial(RequestHandler, directory=os.getcwd())
+            httpd = SocketServer.TCPServer(("", port), handler)
 
             self._server = threading.Thread(target=httpd.serve_forever)
             self._server.daemon = True

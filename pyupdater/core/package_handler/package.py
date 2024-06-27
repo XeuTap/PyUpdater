@@ -144,6 +144,7 @@ class Package(object):
         self.file_hash = None
         self.file_size = None
         self.platform = None
+        self.date = 0.0
         self.info = dict(status=False, reason="")
         self.patch = None
         # seems to produce the best diffs.

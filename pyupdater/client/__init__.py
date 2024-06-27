@@ -24,6 +24,7 @@
 # ------------------------------------------------------------------------------
 from __future__ import unicode_literals
 
+import datetime
 import glob
 import gzip
 import json
@@ -36,6 +37,7 @@ import warnings
 from ctypes import cdll
 
 import appdirs
+import urllib3
 from dsdev_utils.app import app_cwd, FROZEN
 from dsdev_utils.helpers import (
     EasyAccessDict as _EAD,
@@ -48,6 +50,7 @@ from dsdev_utils.system import get_system as _get_system
 from nacl.signing import VerifyKey
 
 from importlib.metadata import version
+
 VERSION_NUM = version("PyUpdater")
 
 from pyupdater import settings
@@ -56,15 +59,13 @@ from pyupdater.client.updates import (
     AppUpdate,
     get_highest_version,
     LibUpdate,
-    UpdateStrategy,
+    UpdateStrategy, get_version,
 )
 from pyupdater.utils.config import Config as _Config
 from pyupdater.utils.encoding import UnpaddedBase64Encoder
 from pyupdater.utils.exceptions import ClientError
 
-
 warnings.simplefilter("always", DeprecationWarning)
-
 
 log = logging.getLogger(__name__)
 log_path = os.path.join(app_cwd, "pyu.log")
@@ -74,6 +75,7 @@ if os.path.exists(log_path):  # pragma: no cover
     ch.setFormatter(logging_formatter)
     log.addHandler(ch)
 log.debug("PyUpdater Version %s", VERSION_NUM)
+
 
 # Mostly used for testing purposes
 class DefaultClientConfig(object):
@@ -180,6 +182,7 @@ class Client(object):
 
         # Folder to house update archives
         self.update_folder = os.path.join(self.data_dir, settings.UPDATE_FOLDER)
+        os.makedirs(self.update_folder, exist_ok=True)
 
         # The root public key to verify the app signing private key
         self.root_key = config.get("PUBLIC_KEY", "")
@@ -227,7 +230,7 @@ class Client(object):
         except Exception as error:
             print(traceback.format_exc())
 
-    def update_check(self, name, version, channel="stable", strict=True):
+    def update_check(self, name, version, channel="stable", strict=True, limit_date: float = 0.0, allow_downgrade: bool = False):
         """Checks for available updates
 
         ######Args:
@@ -252,7 +255,7 @@ class Client(object):
 
             None - No Updates available
         """
-        return self._update_check(name, version, channel, strict)
+        return self._update_check(name, version, channel, strict, limit_date, allow_downgrade)
 
     def _gen_file_downloader_options(self):
         return {
@@ -263,7 +266,7 @@ class Client(object):
             "verify": self.verify,
         }
 
-    def _update_check(self, name, version, channel, strict):
+    def _update_check(self, name, version, channel, strict, limit_date, allow_downgrade):
         valid_channels = ["alpha", "beta", "stable"]
         if channel not in valid_channels:
             log.info("Invalid channel. May need to check spelling")
@@ -298,10 +301,13 @@ class Client(object):
 
         print("Checking for {} updates...".format(name))
         log.info("Checking for %s updates...", name)
-        latest = get_highest_version(
-            name, self.platform, channel, self.easy_data, strict
-        )
-        if latest is None:
+        if limit_date:
+            target_version = get_version(name, self.platform, channel, self.easy_data, strict, limit_date)
+        else:
+            target_version = get_highest_version(
+                name, self.platform, channel, self.easy_data, strict
+            )
+        if target_version is None:
             # If None is returned get_highest_version could
             # not find the supplied name in the version file
             log.warning("Could not find the latest version")
@@ -309,15 +315,21 @@ class Client(object):
 
         # Change str to version object for easy comparison
         log.info("Current version: %s", str(version))
-        log.info("Latest version: %s", str(latest))
+        log.info("Highest version: %s", str(target_version))
 
-        update_needed = latest > version
+        update_needed = target_version > version
         print("Update Needed: {}".format(update_needed))
         log.info("Update Needed: %s", update_needed)
-        if latest <= version:
-            log.info("%s already updated to the latest version", name)
-            print("{} already updated to the latest version".format(name))
-            return None
+        if allow_downgrade:
+            if target_version == version:
+                log.info("%s already updated to the latest version", name)
+                print("{} already updated to the latest version".format(name))
+                return None
+        else:
+            if target_version <= version:
+                log.info("%s already updated to the latest version", name)
+                print("{} already updated to the latest version".format(name))
+                return None
 
         # Config data to initialize update object
         data = {
@@ -337,6 +349,7 @@ class Client(object):
             "headers": self.headers,
             "downloader": self.downloader,
             "strategy": self.strategy,
+            "target_version": target_version,
         }
 
         data.update(self._gen_file_downloader_options())
@@ -463,6 +476,8 @@ class Client(object):
                     )
                 data = fd.download_verify_return()
                 try:
+                    if data is None:
+                        raise urllib3.exceptions.ConnectionError("Unable to connect to the server")
                     decompressed_data = _gzip_decompress(data)
                 except IOError:
                     log.error("Failed to decompress gzip file")
@@ -498,6 +513,8 @@ class Client(object):
                 )
             data = fd.download_verify_return()
             try:
+                if data is None:
+                    raise urllib3.exceptions.ConnectionError("Unable to connect to the server")
                 decompressed_data = _gzip_decompress(data)
             except IOError:
                 print("Failed to decompress gzip file")
@@ -530,8 +547,13 @@ class Client(object):
         log.info("Loading version file...")
 
         data = self._get_manifest_from_http()
+        print(data)
+        print("GETTING MANIFEST FROM DISK")
+        print(self.data_dir)
+        print(self.version_file)
         if data is None:
             data = self._get_manifest_from_disk()
+        print(data)
 
         if data is not None:
             try:

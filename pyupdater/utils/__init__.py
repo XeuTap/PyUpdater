@@ -279,8 +279,12 @@ def make_archive(name: str, target: str, version: str, archive_format="default")
     if os.path.isfile(target):
         os.makedirs(temp_folder, exist_ok=True)
         shutil.copy(target, temp_file, follow_symlinks=True)
-        if os.path.isfile(temp_folder + os.sep + target):
-            os.rename(temp_folder + os.sep + target, temp_folder + os.sep + temp_file)
+        if os.path.isfile(target):
+            shutil.copy(target, os.path.join(temp_folder, temp_file))
+        if os.path.isfile(os.path.join(temp_folder, target)):
+            if os.path.isfile(os.path.join(temp_folder, temp_file)):
+                os.remove(os.path.join(temp_folder, temp_file))
+            os.rename(os.path.join(temp_folder, target), os.path.join(temp_folder, temp_file))
         file_dir = temp_folder
         base_dir = None
     #     shutil.copytree(Path(target).parent, name, symlinks=True)

@@ -72,7 +72,7 @@ def main():
         if success is True:
             print("Update download successful")
             print("Extracting & overwriting")
-            update.extract_overwrite()
+            update.extract_overwrite(check_permissions=False)
         else:
             print("Failed to download update")
     return VERSION

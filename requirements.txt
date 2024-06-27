@@ -1,9 +1,10 @@
 appdirs>=1.4.3
 bsdiff4
 certifi>=2019.3.9
-dsdev-utils==1.2.4
-pyinstaller>=3.0
+dsdev-utils>=1.2.4
+pyinstaller>=6.5.0
 pynacl>=1.4.0
 stevedore>=1.30.1, <4.0
 urllib3>=1.24.1, <2.0
 stdlib-list>=0.9.0
+pypiwin32

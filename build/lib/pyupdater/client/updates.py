@@ -28,6 +28,7 @@ import logging
 import os
 import shutil
 import subprocess
+import time
 import traceback
 import uuid
 import sys
@@ -35,6 +36,8 @@ import tarfile
 import threading
 import zipfile
 import ctypes
+from pathlib import Path
+from typing import Iterable
 
 from dsdev_utils.helpers import Version, VersionFormat
 from dsdev_utils.paths import ChDir, get_mac_dot_app_dir, remove_any
@@ -101,8 +104,9 @@ def win_unhide_file(file):  # pragma: no cover
         raise ctypes.WinError()
 
 
-def win_run(command, args, admin=False):  # pragma: no cover
-
+def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cover
+    if args is None:
+        args = []
     """
     In windows run a command, optionally as admin.
     """
@@ -229,164 +233,161 @@ class Restarter(object):  # pragma: no cover
         self.strategy = kwargs.get("strategy", UpdateStrategy.DEFAULT)
         log.debug("Current App: %s", self.current_app)
         self.is_win = sys.platform == "win32"
+        self.updater_name = "updater.exe"
+        self.check_permissions = kwargs.get("check_permissions", False)
         if self.is_win is True and self.strategy == UpdateStrategy.OVERWRITE:
             self.data_dir = kwargs.get("data_dir")
             self.bat_file = os.path.join(self.data_dir, "update.bat")
             self.vbs_file = os.path.join(self.data_dir, "invis.vbs")
+            self.update_folder = kwargs.get("update_folder")
+            self.update_filename = kwargs.get("update_filename")
             self.updated_app = kwargs.get("updated_app")
             log.debug("Restart script dir: %s", self.data_dir)
             log.debug("Update path: %s", self.updated_app)
 
     def process(self, win_restart=True):
         if self.is_win and self.strategy == UpdateStrategy.OVERWRITE:
-            if win_restart is True:
-                self._win_overwrite_restart()
-            else:
-                self._win_overwrite()
+            is_folder = os.path.isdir(self.updated_app)
+            needs_admin = requires_admin(os.path.dirname(self.updated_app))
+            is_file = os.path.isfile(self.updated_app)
+            if is_file:
+                needs_admin = needs_admin or requires_admin(self.current_app)
+            log.debug("Admin required to update={}".format(needs_admin))
+            self._win_overwrite(restart=win_restart, one_dir=is_folder)
         else:
             self._restart()
 
     def _restart(self):
         os.execl(self.current_app, self.name, *sys.argv[1:])
 
-    def _win_overwrite(self):
-        print("WIN UPDATE PATCH")
-        print(self.updated_app, self.current_app, self.vbs_file)
-        is_folder = os.path.isdir(self.updated_app)
-        if is_folder:
-            needs_admin = requires_admin(self.updated_app) or requires_admin(
-                self.current_app
-            )
+    def _win_overwrite(self, restart: bool, override_check_permissions: bool = None, one_dir: bool = False):
+        info_file = os.path.join(os.environ.get("APPDATA"), "extract_info_2.txt")
+        check_permissions = override_check_permissions
+        if override_check_permissions is None:
+            check_permissions = self.check_permissions
+        compiled_executable_path = os.path.join(str(Path(sys.executable).parent), self.updater_name)
+        if hasattr(sys, '_MEIPASS'):
+            meipass = sys._MEIPASS
         else:
-            needs_admin = requires_admin(self.current_app)
-        log.debug("Admin required to update={}".format(needs_admin))
-        with io.open(self.bat_file, "w", encoding="utf-8") as bat:
-            if is_folder:
-                bat.write(
-                    """
-@echo off
-chcp 65001
-echo Updating to latest version...
-ping 127.0.0.1 -n 5 -w 2000 > NUL
-robocopy "{}" "{}" /e /move /V /PURGE > %appdata%/extract_info_1.txt
-DEL "{}"
-DEL "%~f0"
-""".format(
-                        self.updated_app, self.current_app, self.vbs_file
-                    )
-                )
-            else:
-                bat.write(
-                    """
-@echo off
-chcp 65001
-echo Updating to latest version...
-ping 127.0.0.1 -n 5 -w 2000 > NUL
-move /Y "{}" "{}" > %appdata%/extract_info_2.txt
-DEL "{}"
-DEL "%~f0"
-""".format(
-                        self.updated_app, self.current_app, self.vbs_file
-                    )
-                )
-
-        with io.open(self.vbs_file, "w", encoding="utf-8") as vbs:
-            # http://www.howtogeek.com/131597/can-i-run-a-windows-batch-
-            # file-without-a-visible-command-prompt/
-            vbs.write(
-                'CreateObject("Wscript.Shell").Run """" '
-                '& WScript.Arguments(0) & """", 0, False'
-            )
-        log.debug("Starting update batch file")
-        win_run("wscript.exe", [self.vbs_file, self.bat_file], admin=needs_admin)
+            meipass = ""
+        pyinstaller_internal_path = os.path.join(meipass, self.updater_name)
+        if os.path.isfile(compiled_executable_path):
+            updater_filepath = compiled_executable_path
+        elif os.path.isfile(pyinstaller_internal_path):
+            updater_filepath = pyinstaller_internal_path
+        else:
+            updater_filepath = None
+        if updater_filepath:
+            updater_args = [
+                os.path.dirname(self.current_app),
+                os.path.join(self.update_folder, self.update_filename),
+                self.current_app,
+            ]
+            if not check_permissions:
+                updater_args.append("--skip-folder-check")
+            if not restart:
+                updater_args.append("--disable-executable")
+            log.debug("Starting update using updater")
+            if os.path.isfile(info_file):
+                os.remove(info_file)
+            with open(info_file, "w") as file:
+                file.write("Starting update using updater\n")
+            updater_folder = os.path.join(self.data_dir, settings.UPDATER_FOLDER)
+            os.makedirs(updater_folder, exist_ok=True)
+            temp_updater_filepath = os.path.join(updater_folder, self.updater_name)
+            if os.path.isfile(temp_updater_filepath):
+                os.remove(temp_updater_filepath)
+            shutil.copyfile(updater_filepath, temp_updater_filepath)
+            win_run(temp_updater_filepath, updater_args)
+        else:
+            self._extract_update()
+            self._create_update_script(restart=restart, check_permissions=check_permissions, one_dir=one_dir)
+            log.debug("Starting update using batch file")
+            win_run(self.bat_file, admin=False)
         os._exit(0)
 
-    def _win_overwrite_restart(self):
-        is_folder = os.path.isdir(self.updated_app)
-        if is_folder:
-            needs_admin = requires_admin(self.updated_app) or requires_admin(
-                self.current_app
-            )
-        else:
-            needs_admin = requires_admin(self.current_app)
-        log.debug("Admin required to update={}".format(needs_admin))
-        with io.open(self.bat_file, "w", encoding="utf-8") as bat:
-            if is_folder:
-                bat.write(
-                    """
-@echo off
-chcp 65001
-echo Updating to latest version...
-ping 127.0.0.1 -n 5 -w 1000 > NUL
-robocopy "{}" "{}" /e /move /V > %appdata%/extract_info_1.txt
-echo restarting...
-start "" "{}"
-DEL "{}"
-DEL "%~f0"
-""".format(
-                        self.updated_app,
-                        self.current_app,
-                        os.path.join(self.current_app, ".".join([self.name, "exe"])),
-                        self.vbs_file,
-                    )
-                )
-            else:
-                bat.write(
-                    """
-@ECHO off
-chcp 65001
-echo Updating to latest version... > %%appdata%%/extract_info_2.txt
-set a=1
-set observable_file="%(current_app)s"
+    def _extract_update(self):
+        os.makedirs(self.update_folder, exist_ok=True)
+        with ChDir(self.update_folder):
+            log.debug("Extracting Update")
+            archive_ext = os.path.splitext(self.update_filename)[1].lower()
 
-:start
+            if archive_ext == ".zip":
+                try:
+                    with zipfile.ZipFile(self.update_filename, "r") as zfile:
+                        # Extract update file to current
+                        # directory.
+                        zfile.extractall()
+                except Exception as err:  # pragma: no cover
+                    log.debug(err, exc_info=True)
+                    raise ClientError("Error reading zip file", expected=True)
+
+    def _create_update_script(self,
+                              restart: bool = True,
+                              check_permissions: bool = True,
+                              one_dir: bool = False) -> None:
+        start_app = ""
+        if restart:
+            start_app = f'start "" "{self.current_app}"\n'
+        wait_for_access = """
+        ping 127.0.0.1 -n 5 -w 1000 > NUL
+        goto accessGranted\n"""
+        if check_permissions:
+            wait_for_access = """:start
 timeout /T 1 >>NUL
 echo %%a%%
 
-if %%a%% GEQ 60 (
+if %%a%% GEQ 30 (
 goto stop
 )
 
 set /A a=%%a%%+1
 if exist %%observable_file%% (
 2>nul (
-  >> %%observable_file%%  (call )
+>> %%observable_file%%  (call )
 ) && (goto accessGranted) || (goto start) ) else ( exit )
 
 :stop
 echo "ACCESS TIMEOUT" >> %%appdata%%/extract_info_2.txt
-goto end
+goto end"""
+        extract_method = """robocopy "%(src_dir)s" "%(destination_dir)s" /e /move /V /xf %(name)s*.zip >> %%appdata%%/extract_info_2.txt""" % {
+            "src_dir": os.path.dirname(self.updated_app),
+            "destination_dir": os.path.dirname(self.current_app),
+            "name": self.name,
+        }
+        if one_dir:
+            extract_method = """robocopy "%(src_dir)s" "%(destination_dir)s" /e /move /V > %%appdata%%/extract_info_1.txt""" % {
+                "src_dir": self.updated_app,
+                "destination_dir": self.current_app,
+            }
+        with io.open(self.bat_file, "w", encoding="utf-8") as bat:
+            bat.write(
+                """
+@ECHO off
+chcp 65001
+echo Updating to latest version... > %%appdata%%/extract_info_2.txt
+set a=1
+set observable_file="%(current_app)s"
 
+%(wait_for_access)s
 
 :accessGranted
 echo %%a%%
 echo "FILE AVAILABLE" >> %%appdata%%/extract_info_2.txt
-robocopy "%(src_dir)s" "%(destination_dir)s" /e /move /V /xf %(name)s*.zip >> %%appdata%%/extract_info_2.txt
+%(extract_method)s
 echo restarting... >> %%appdata%%/extract_info_2.txt
-start "" "%(current_app)s"
+%(start_app)s
 goto end
 
 
 :end
-DEL "%%(vbs_file)s"
 DEL "%%~f0"
-                    """ % {
-                        "src_dir": os.path.dirname(self.updated_app),
-                        "destination_dir": os.path.dirname(self.current_app),
-                        "name": self.name,
-                        "current_app": self.current_app,
-                        "vbs_file": self.vbs_file,
-                    })
-        with io.open(self.vbs_file, "w", encoding="utf-8") as vbs:
-            # http://www.howtogeek.com/131597/can-i-run-a-windows-batch-
-            # file-without-a-visible-command-prompt/
-            vbs.write(
-                'CreateObject("Wscript.Shell").Run """" '
-                '& WScript.Arguments(0) & """", 0, False'
-            )
-        log.debug("Starting update batch file")
-        win_run("wscript.exe", [self.vbs_file, self.bat_file], admin=False)
-        os._exit(0)
+                """ % {
+                    "current_app": self.current_app,
+                    "start_app": start_app,
+                    "wait_for_access": wait_for_access,
+                    "extract_method": extract_method,
+                })
 
 
 class LibUpdate(object):
@@ -542,26 +543,26 @@ class LibUpdate(object):
                 self._is_downloading = True
                 return self._download()
 
-    def extract(self):
-        """Will extract the update from its archive to the update folder.
-        If updating a lib you can take over from there. If updating
-        an app this call should be followed by method "restart" to
-        complete update.
-
-        ######Returns:
-
-            (bool) True - Extract successful. False - Extract failed.
-        """
-        # if get_system() == "win":  # Tested elsewhere
-        #    log.debug("Only supported on Unix like systems")
-        #    return False
-        try:
-            self._extract_update()
-        except ClientError as err:
-            print(traceback.format_exc())
-            log.debug(err, exc_info=True)
-            return False
-        return True
+    # def extract(self):
+    #     """Will extract the update from its archive to the update folder.
+    #     If updating a lib you can take over from there. If updating
+    #     an app this call should be followed by method "restart" to
+    #     complete update.
+    #
+    #     ######Returns:
+    #
+    #         (bool) True - Extract successful. False - Extract failed.
+    #     """
+    #     # if get_system() == "win":  # Tested elsewhere
+    #     #    log.debug("Only supported on Unix like systems")
+    #     #    return False
+    #     try:
+    #         self._extract_update()
+    #     except ClientError as err:
+    #         print(traceback.format_exc())
+    #         log.debug(err, exc_info=True)
+    #         return False
+    #     return True
 
     @staticmethod
     def _get_filename(name, version, platform, easy_data):
@@ -613,42 +614,58 @@ class LibUpdate(object):
         self._is_downloading = False
         return self._download_status
 
-    def _extract_update(self):
+    def _verify_update(self) -> None:
+        os.makedirs(self.update_folder, exist_ok=True)
         with ChDir(self.update_folder):
             if not os.path.exists(self.filename):
                 log.debug("File does not exists")
                 raise ClientError("File does not exists", expected=True)
 
-            if not os.access(self.filename, os.R_OK):
-                raise ClientError("Permissions Error", expected=True)
-
             if self._verify_file_hash():
                 log.debug("Extracting Update")
                 archive_ext = os.path.splitext(self.filename)[1].lower()
-
-                if archive_ext in [".gz", ".bz2"]:
-                    try:
-                        mode = "r:{}".format(archive_ext[1:])
-                        with tarfile.open(self.filename, mode) as tfile:
-                            # Extract file update to current
-                            # directory.
-                            tfile.extractall()
-                    except Exception as err:  # pragma: no cover
-                        log.debug(err, exc_info=True)
-                        raise ClientError("Error reading gzip file", expected=True)
-                elif archive_ext == ".zip":
-                    try:
-                        with zipfile.ZipFile(self.filename, "r") as zfile:
-                            # Extract update file to current
-                            # directory.
-                            zfile.extractall()
-                    except Exception as err:  # pragma: no cover
-                        log.debug(err, exc_info=True)
-                        raise ClientError("Error reading zip file", expected=True)
-                else:
+                # if archive_ext not in [".gz", ".bz2", ".zip"]:
+                if archive_ext not in [".zip"]:
                     raise ClientError("Unknown file type")
             else:
                 raise ClientError("Update archive is corrupt")
+
+    # def _extract_update(self):
+    #     with ChDir(self.update_folder):
+    #         if not os.path.exists(self.filename):
+    #             log.debug("File does not exists")
+    #             raise ClientError("File does not exists", expected=True)
+    #
+    #         if not os.access(self.filename, os.R_OK):
+    #             raise ClientError("Permissions Error", expected=True)
+    #
+    #         if self._verify_file_hash():
+    #             log.debug("Extracting Update")
+    #             archive_ext = os.path.splitext(self.filename)[1].lower()
+    #
+    #             if archive_ext in [".gz", ".bz2"]:
+    #                 try:
+    #                     mode = "r:{}".format(archive_ext[1:])
+    #                     with tarfile.open(self.filename, mode) as tfile:
+    #                         # Extract file update to current
+    #                         # directory.
+    #                         tfile.extractall()
+    #                 except Exception as err:  # pragma: no cover
+    #                     log.debug(err, exc_info=True)
+    #                     raise ClientError("Error reading gzip file", expected=True)
+    #             elif archive_ext == ".zip":
+    #                 try:
+    #                     with zipfile.ZipFile(self.filename, "r") as zfile:
+    #                         # Extract update file to current
+    #                         # directory.
+    #                         zfile.extractall()
+    #                 except Exception as err:  # pragma: no cover
+    #                     log.debug(err, exc_info=True)
+    #                     raise ClientError("Error reading zip file", expected=True)
+    #             else:
+    #                 raise ClientError("Unknown file type")
+    #         else:
+    #             raise ClientError("Update archive is corrupt")
 
     def _get_file_hash_from_manifest(self):
         hash_key = "{}*{}*{}*{}*{}".format(
@@ -678,6 +695,7 @@ class LibUpdate(object):
     # Checks if latest update is already downloaded
     def _is_downloaded(self):
         # Comparing file hashes to ensure security
+        os.makedirs(self.update_folder, exist_ok=True)
         with ChDir(self.update_folder):
             verified = self._verify_file_hash()
 
@@ -722,7 +740,7 @@ class LibUpdate(object):
     def _full_update(self):
         log.debug("Starting full update")
         file_hash = self._get_file_hash_from_manifest()
-
+        os.makedirs(self.update_folder, exist_ok=True)
         with ChDir(self.update_folder):
             log.debug("Downloading update...")
             if self.downloader:
@@ -775,32 +793,33 @@ class AppUpdate(LibUpdate):  # pragma: no cover
         self._is_win = get_system() == "win"
         super(AppUpdate, self).__init__(data)
 
-    def extract_restart(self):
+    def extract_restart(self, check_permissions: bool = True):
         """Will extract the update, overwrite the current binary,
         then restart the application using the updated binary."""
         try:
-            self._extract_update()
+            self._verify_update()
 
             if self._is_win:
                 if self.strategy == UpdateStrategy.RENAME:
                     self._win_rename_restart()
                 else:
-                    self._win_overwrite_restart()
+                    self._win_overwrite_restart(check_permissions)
             else:
-                self._overwrite()
-                self._restart()
+                raise NotImplementedError
+                # self._overwrite()
+                # self._restart()
         except ClientError as err:
             log.error(err, exc_info=True)
 
-    def extract_overwrite(self):
+    def extract_overwrite(self, check_permissions: bool = True):
         """Will extract the update then overwrite the current binary"""
         try:
-            self._extract_update()
+            self._verify_update()
             if self._is_win:
                 if self.strategy == UpdateStrategy.RENAME:
                     self._win_rename()
                 else:
-                    self._win_overwrite()
+                    self._win_overwrite(check_permissions)
             else:
                 self._overwrite()
         except ClientError as err:
@@ -925,7 +944,7 @@ class AppUpdate(LibUpdate):  # pragma: no cover
             os.rename(old_app, current_app)
             raise e
 
-    def _win_overwrite(self):
+    def _win_overwrite(self, check_permissions: bool):
         # Windows: Moves update to current directory of running
         #                 application then restarts application using
         #                 new update.
@@ -939,12 +958,17 @@ class AppUpdate(LibUpdate):  # pragma: no cover
             updated_app = os.path.join(self.update_folder, self.name)
 
         update_info = dict(
-            data_dir=self.data_dir, updated_app=updated_app, name=self.name
+            data_dir=self.data_dir,
+            updated_app=updated_app,
+            update_folder=self.update_folder,
+            update_filename=self.filename,
+            name=self.name,
+            check_permissions=check_permissions,
         )
         r = Restarter(current_app, **update_info)
         r.process(win_restart=False)
 
-    def _win_overwrite_restart(self):
+    def _win_overwrite_restart(self, check_permissions: bool):
         # Windows: Moves update to current directory of running
         #          application then restarts application using
         #          new update.
@@ -959,7 +983,12 @@ class AppUpdate(LibUpdate):  # pragma: no cover
             updated_app = os.path.join(self.update_folder, self.name)
 
         update_info = dict(
-            data_dir=self.data_dir, updated_app=updated_app, name=self.name
+            data_dir=self.data_dir,
+            updated_app=updated_app,
+            name=self.name,
+            update_folder=self.update_folder,
+            update_filename=self.filename,
+            check_permissions=check_permissions,
         )
         r = Restarter(current_app, **update_info)
         r.process()

@@ -2,17 +2,46 @@
   "version_meta": {
     "signature": "SFZSIMCiVl1AdjRvIAq5Qyxtk3Yk83SX8AgSFASsJT0RQ+BsNUFuRZ0OVXbnBXoNHuAfhrb7bzZhMeaxQCVSDg",
     "updates": {
+      "Acme": {
+        "4.1.0.2.0": {
+          "win": {
+            "file_hash": "b697e5c28ea6ec7a7457709611b06e0d470e4ea56b312caf98b1775cdbc52937",
+            "file_size": 14917607,
+            "filename": "Acme-win-4.1.zip",
+            "date": 1719470649.047771
+          }
+        },
+        "4.2.0.2.0": {
+          "win": {
+            "file_hash": "270dbe9cd3b193db82d94074e7778b60886caddb68509915b3f494e1268d9df5",
+            "file_size": 7707022,
+            "filename": "Acme-win-4.2.zip",
+            "date": 1719470658.523461
+          }
+        }
+      }
     },
     "latest": {
+      "Acme": {
+        "stable": {
+          "win": {
+            "version": "4.2.0.2.0",
+            "date": 1719470658.523461
+          }
+        }
+      }
     }
   },
   "count": 0,
   "sync_threshold": 3,
   "py_repo_config": {
     "patches": {
-      "Acme": 4
+      "Acme": 100
     },
     "package": {
+      "Acme": {
+        "win": "4.2.0.2.0"
+      }
     }
   },
   "app_config": {
@@ -39,5 +68,6 @@
       "signature": "WtNNMd2AsDlOIti1sFRylWJb/jyBOlfiF7eJPbSl/FNjvnQ+0L/7ooaDYAzRWsHCs58JyB7XYMcyfKSwDjO9Cg"
     }
   },
-  "config_dir": ".pyupdater"
+  "config_dir": ".pyupdater",
+  "filename": "C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_restart\\.pyupdater\\config.pyu"
 }

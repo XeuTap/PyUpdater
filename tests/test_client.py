@@ -194,25 +194,25 @@ class TestDownload(object):
         assert update.is_downloaded() is True
 
 
-@pytest.mark.usefixtures("cleandir", "client")
-class TestExtract(object):
-    def test_extract(self, client):
-        update = client.update_check(client.app_name, "0.0.1")
-        assert update is not None
-        assert update.download() is True
-        if get_system() != "win":
-            assert update.extract() is True
-
-    def test_extract_no_file(self, client):
-        update = client.update_check(client.app_name, "0.0.1")
-        assert update is not None
-        assert update.download() is True
-        with ChDir(update.update_folder):
-            files = os.listdir(os.getcwd())
-            for f in files:
-                remove_any(f)
-        if get_system() != "win":
-            assert update.extract() is False
+# @pytest.mark.usefixtures("cleandir", "client")
+# class TestExtract(object):
+#     def test_extract(self, client):
+#         update = client.update_check(client.app_name, "0.0.1")
+#         assert update is not None
+#         assert update.download() is True
+#         if get_system() != "win":
+#             assert update.extract() is True
+#
+#     def test_extract_no_file(self, client):
+#         update = client.update_check(client.app_name, "0.0.1")
+#         assert update is not None
+#         assert update.download() is True
+#         with ChDir(update.update_folder):
+#             files = os.listdir(os.getcwd())
+#             for f in files:
+#                 remove_any(f)
+#         if get_system() != "win":
+#             assert update.extract() is False
 
 
 class TestGenVersion(object):

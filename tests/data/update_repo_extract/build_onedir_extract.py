@@ -39,7 +39,7 @@ home_dir = os.path.dirname(os.path.abspath(__file__))
 
 def build(app):
     os.environ["PYINSTALLER_CONFIG_DIR"] = os.path.join(home_dir, ".cache")
-    cmd = "pyupdater build -D --clean {} --path={} " "--app-version={} {}".format(
+    cmd = "python -m pyupdater build -D --clean {} --path={} " "--app-version={} {}".format(
         app[2], home_dir, app[1], app[0]
     )
     os.system(cmd)

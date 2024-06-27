@@ -61,11 +61,28 @@ class TestSetup(object):
 
 
 class TestExecutionExtraction(object):
+
+    # def test_execution_one_file_extract_no_cli(self, shared_datadir, simpleserver, pyu):
+    #     #cmd = r"python -m pyupdater build -F  --clean --path=C:\TRAFOLO\repo\pyupdater_source\tests\data\update_repo_extract --app-version=4.1 app_extract_01.py"
+    #     from pyupdater import cli as cli_emulation
+    #     data_dir = shared_datadir / "update_repo_extract"
+    #     with ChDir(data_dir):
+    #         binaries = [os.path.join(data_dir, "updater.exe")]
+    #         binaries_str = ';'.join(binaries) + ";."
+    #         cli_emulation.main(["build",
+    #                             "-F",
+    #                             "--clean",
+    #                             r"--path={}".format(data_dir),
+    #                             r"--app-version=4.1",
+    #                             "app_extract_01.py",
+    #                             "--add-binary={}".format(binaries_str),
+    #                             ])
+
     @pytest.mark.parametrize(
         "custom_dir, port, windowed, split_version",
         [
-            (True, 9000, True, True),
-            (True, 9001, False, True),
+            (True, 9000, False, True),
+            (True, 9001, True, True),
             (False, 9002, True, True),
             (False, 9003, False, True),
             (True, 9004, True, False),
@@ -87,28 +104,37 @@ class TestExecutionExtraction(object):
         split_version,
     ):
         data_dir = shared_datadir / "update_repo_extract"
+        binaries = [os.path.join(data_dir, "updater.exe")]
+        binaries_str = ';'.join(binaries)
+        if binaries_str:
+            binaries_str += ";."
         pyu.setup()
 
         # We are moving all of the files from the deploy directory to the
         # cwd. We will start a simple http server to use for updates
         test_cwd = os.getcwd()
         with ChDir(data_dir):
-            simpleserver.start(port)
+            with ChDir(test_cwd):
+                simpleserver.start(port)
 
             with open("pyu.log", "w") as f:
                 f.write("")
 
-            cmd = "python build_onefile_extract.py %s %s %s %s" % (
+            cmd = "python build_onefile_extract.py %s %s %s %s %s" % (
                 custom_dir,
                 port,
                 windowed,
                 split_version,
+                binaries_str,
             )
             os.system(cmd)
 
             # Moving all files from the deploy directory to the cwd
             # since that is where we will start the simple server
             deploy_dir = os.path.join("pyu-data", "deploy")
+            app_name = "Acme.exe"
+            if os.path.isfile(app_name):
+                shutil.copyfile(app_name, os.path.join(deploy_dir, app_name))
             assert os.path.exists(deploy_dir)
             with ChDir(deploy_dir):
                 files = os.listdir(os.getcwd())
@@ -146,7 +172,7 @@ class TestExecutionExtraction(object):
                 count = 0
                 while count < 5:
                     # Call the binary to self update
-                    subprocess.call(test_cwd + os.sep + app_run_command, shell=True, cwd=test_cwd)
+                    subprocess.call(os.path.join(test_cwd, app_run_command), shell=True, cwd=test_cwd)
                     if os.path.exists(output_file):
                         break
                     count += 1
@@ -156,7 +182,7 @@ class TestExecutionExtraction(object):
 
             # Call the binary to ensure it's
             # the updated binary
-            subprocess.call(test_cwd + os.sep + app_run_command, shell=True)
+            subprocess.call(os.path.join(test_cwd, app_run_command), shell=True, cwd=test_cwd)
 
             simpleserver.stop()
             # Detect if it was an overwrite error

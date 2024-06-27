@@ -62,6 +62,7 @@ UPDATES_KEY = "updates"
 
 # Folder on client system where updates are stored
 UPDATE_FOLDER = "update"
+UPDATER_FOLDER = "updater"
 
 # Name of version file in online repo
 VERSION_FILE_FILENAME = "versions.gz"

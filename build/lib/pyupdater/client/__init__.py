@@ -36,6 +36,7 @@ import warnings
 from ctypes import cdll
 
 import appdirs
+import urllib3
 from dsdev_utils.app import app_cwd, FROZEN
 from dsdev_utils.helpers import (
     EasyAccessDict as _EAD,
@@ -48,6 +49,7 @@ from dsdev_utils.system import get_system as _get_system
 from nacl.signing import VerifyKey
 
 from importlib.metadata import version
+
 VERSION_NUM = version("PyUpdater")
 
 from pyupdater import settings
@@ -62,9 +64,7 @@ from pyupdater.utils.config import Config as _Config
 from pyupdater.utils.encoding import UnpaddedBase64Encoder
 from pyupdater.utils.exceptions import ClientError
 
-
 warnings.simplefilter("always", DeprecationWarning)
-
 
 log = logging.getLogger(__name__)
 log_path = os.path.join(app_cwd, "pyu.log")
@@ -74,6 +74,7 @@ if os.path.exists(log_path):  # pragma: no cover
     ch.setFormatter(logging_formatter)
     log.addHandler(ch)
 log.debug("PyUpdater Version %s", VERSION_NUM)
+
 
 # Mostly used for testing purposes
 class DefaultClientConfig(object):
@@ -180,6 +181,7 @@ class Client(object):
 
         # Folder to house update archives
         self.update_folder = os.path.join(self.data_dir, settings.UPDATE_FOLDER)
+        os.makedirs(self.update_folder, exist_ok=True)
 
         # The root public key to verify the app signing private key
         self.root_key = config.get("PUBLIC_KEY", "")
@@ -463,6 +465,8 @@ class Client(object):
                     )
                 data = fd.download_verify_return()
                 try:
+                    if data is None:
+                        raise urllib3.exceptions.ConnectionError("Unable to connect to the server")
                     decompressed_data = _gzip_decompress(data)
                 except IOError:
                     log.error("Failed to decompress gzip file")
@@ -498,6 +502,8 @@ class Client(object):
                 )
             data = fd.download_verify_return()
             try:
+                if data is None:
+                    raise urllib3.exceptions.ConnectionError("Unable to connect to the server")
                 decompressed_data = _gzip_decompress(data)
             except IOError:
                 print("Failed to decompress gzip file")
@@ -530,8 +536,13 @@ class Client(object):
         log.info("Loading version file...")
 
         data = self._get_manifest_from_http()
+        print(data)
+        print("GETTING MANIFEST FROM DISK")
+        print(self.data_dir)
+        print(self.version_file)
         if data is None:
             data = self._get_manifest_from_disk()
+        print(data)
 
         if data is not None:
             try:

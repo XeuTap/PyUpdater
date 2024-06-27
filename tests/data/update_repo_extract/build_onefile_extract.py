@@ -36,11 +36,13 @@ log = logging.getLogger()
 
 home_dir = os.path.dirname(os.path.abspath(__file__))
 
-
 def build(app):
     os.environ["PYINSTALLER_CONFIG_DIR"] = os.path.join(home_dir, ".cache")
-    cmd = "pyupdater build -F {} --clean --path={} " "--app-version={} {}".format(
-        app[2], home_dir, app[1], app[0]
+    binaries = ""
+    if len(app) > 3 and app[3]:
+        binaries = "--add-binary={}".format(app[3])
+    cmd = "python -m pyupdater build -F {} --clean --path={} --app-version={} {} {}".format(
+        app[2], home_dir, app[1], app[0], binaries
     )
     os.system(cmd)
 
@@ -55,15 +57,15 @@ def extract(filename):
     archive.extractall()
 
 
-def main(use_custom_dir, port, windowed, split_version):
-    cmd1 = "pyupdater pkg -P"
-    cmd2 = "pyupdater pkg -S"
+def main(use_custom_dir, port, windowed, split_version, binaries: str = None):
+    cmd1 = "python -m pyupdater pkg -P"
+    cmd2 = "python -m pyupdater pkg -S"
 
     if split_version:
         cmd2 += " --split-version"
 
     scripts = [
-        ("app_extract_01.py", "4.1", "--windowed" if windowed else ""),
+        ("app_extract_01.py", "4.1", "--windowed" if windowed else "", binaries),
         ("app_extract_02.py", "4.2", "--windowed" if windowed else ""),
     ]
 
@@ -110,14 +112,18 @@ def main(use_custom_dir, port, windowed, split_version):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
+    if len(sys.argv) < 5:
         print(
             "usage: %s <use_custom_dir> <port> <windowed> <split_version>" % sys.argv[0]
         )
     else:
+        binaries = None
+        if len(sys.argv) > 5:
+            binaries = sys.argv[5]
         main(
             sys.argv[1] == "True",
             sys.argv[2],
             sys.argv[3] == "True",
             sys.argv[4] == "True",
+            binaries,
         )

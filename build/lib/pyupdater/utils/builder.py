@@ -33,6 +33,7 @@ import time
 
 from PyInstaller import isolated
 from PyInstaller.building.datastruct import normalize_toc
+from PyInstaller.lib.modulegraph.modulegraph import BuiltinModule, SourceModule, Package, Extension
 from stdlib_list import stdlib_list
 
 STDLIB_MODULES = stdlib_list('.'.join([str(v) for v in sys.version_info[0:2]]))
@@ -98,6 +99,19 @@ class Builder(object):  # pragma: no cover
 
     # Creates & archives executable
     def build(self):
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
+        print("build")
         start = time.time()
 
         # Check for spec file or python script
@@ -107,6 +121,7 @@ class Builder(object):  # pragma: no cover
         spec_file_path = os.path.join(self.spec_dir, temp_name + ".spec")
 
         # Spec file used instead of python script
+        print(self.app_info)
         if self.app_info["type"] == "spec":
             spec_file_path = self.app_info["name"]
         else:
@@ -114,7 +129,6 @@ class Builder(object):  # pragma: no cover
             self._make_spec(temp_name)
 
         build_args = self._build_args(spec_file_path)
-
         # Build executable
         self._build(spec_file_path, build_args)
 
@@ -221,7 +235,7 @@ class Builder(object):  # pragma: no cover
             sys.exit(1)
         pyi_build(build_args)
 
-    def _override_dependencies(self, spec_file_path):
+    def _override_dependencies(self, spec_file_path) -> None:
         toc = set()
         binaries = set()
         datas = set()
@@ -269,10 +283,12 @@ class Builder(object):  # pragma: no cover
         local_scope = {}
         exec(code, spec_namespace, local_scope)
         additional_files = local_scope.get("additional_datas", [])
+        additional_modules = local_scope.get("additional_modules", [])
+        if not additional_files and not additional_modules:
+            return
         analysis_args = local_scope["a"]
         analysis_args.kwargs["excludes"] = []
         analysis = Analysis(*analysis_args.args, **analysis_args.kwargs)
-        additional_modules = local_scope.get("additional_modules", [])
 
         temp_folder = self.new_dir + os.sep + get_system()
         # for file_data in additional_files:
@@ -313,6 +329,9 @@ class Builder(object):  # pragma: no cover
         for node in analysis.graph.iter_graph(start=analysis.graph._top_script_node):
             if node is None:
                 continue
+            if isinstance(node, BuiltinModule):
+                continue
+            print(node.identifier)
             for module_name in additional_modules:
                 if module_name not in node.identifier:
                     continue
@@ -340,7 +359,7 @@ class Builder(object):  # pragma: no cover
         #datas.update([(dest, source, "DATA") for (dest, source) in format_binaries_and_datas(metadata)])
         binaries.update(extensions)
         # collected_packages = self.graph.get_collected_packages()
-        new_binaries = isolated.call(find_binary_dependencies, binaries, [], collected_packages)
+        new_binaries = find_binary_dependencies(list(binaries), list(collected_packages))
         binaries.update(
             new_binaries
         )
@@ -484,12 +503,12 @@ def resolve_dependencies(analysis, _node, top_level=False):
 
     if analysis.graph.is_a_builtin(_node):
         return binaries, datas, extensions, pure_modules, collected_packages
-    if not type(_node).__name__ in ["Extension", "Package", "SourceModule"] and not top_level:
+    if not isinstance(_node, (Extension, Package, SourceModule)) and not top_level:
         return binaries, datas, extensions, pure_modules, collected_packages
     if is_standard_module(_node):
         return binaries, datas, extensions, pure_modules, collected_packages
 
-    if type(_node).__name__ == "Package":
+    if isinstance(_node, Package):
         collected_packages.add(_node.identifier)
 
     # print(_node.graphident)

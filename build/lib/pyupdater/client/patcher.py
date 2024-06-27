@@ -147,7 +147,7 @@ class Patcher(object):
         # Verifies latest downloaded archive against known hash
         log.debug("Checking for current installed binary to patch")
         status = True
-
+        os.makedirs(self.update_folder, exist_ok=True)
         with ChDir(self.update_folder):
             if not os.path.exists(self.current_filename):
                 log.debug("Cannot find archive to patch")
