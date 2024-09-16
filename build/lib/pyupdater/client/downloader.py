@@ -133,20 +133,37 @@ class FileDownloader(object):
 
         self.http_timeout = kwargs.get("http_timeout")
 
-        if self.verify is True:
-            self.http_pool = self._get_http_pool()
-        else:
-            self.http_pool = self._get_http_pool(secure=False)
+        proxy = kwargs.get("proxy", None)
 
-    def _get_http_pool(self, secure=True):
-        if secure:
-            _http = urllib3.PoolManager(
-                cert_reqs=str("CERT_REQUIRED"),
-                ca_certs=certifi.where(),
-                timeout=self.http_timeout,
-            )
+        if self.verify is True:
+            self.http_pool = self._get_http_pool(proxy=proxy)
         else:
-            _http = urllib3.PoolManager(timeout=self.http_timeout)
+            self.http_pool = self._get_http_pool(proxy=proxy, secure=False)
+
+    def _get_http_pool(self, secure=True, proxy: dict | None = None):
+        if proxy is None or not isinstance(proxy, dict):
+            if secure:
+                _http = urllib3.PoolManager(
+                    cert_reqs=str("CERT_REQUIRED"),
+                    ca_certs=certifi.where(),
+                    timeout=self.http_timeout,
+                )
+            else:
+                _http = urllib3.PoolManager(timeout=self.http_timeout)
+        else:
+            proxy_url = proxy["url"]
+            proxy_headers = urllib3.util.make_headers(proxy_basic_auth=proxy.get("auth", ""))
+            if secure:
+                _http = urllib3.ProxyManager(
+                    proxy_url,
+                    cert_reqs=str("CERT_REQUIRED"),
+                    ca_certs=certifi.where(),
+                    timeout=self.http_timeout,
+                    proxy_headers=proxy_headers,
+                )
+            else:
+                _http = urllib3.ProxyManager(proxy, timeout=self.http_timeout, proxy_headers=proxy_headers)
+
 
         if self.headers:
             urllib_keys = inspect.getfullargspec(urllib3.util.make_headers).args

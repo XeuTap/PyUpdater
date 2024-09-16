@@ -23,6 +23,8 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------
 from __future__ import unicode_literals
+
+import inspect
 import io
 import logging
 import os
@@ -99,19 +101,6 @@ class Builder(object):  # pragma: no cover
 
     # Creates & archives executable
     def build(self):
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
-        print("build")
         start = time.time()
 
         # Check for spec file or python script
@@ -391,7 +380,10 @@ class Builder(object):  # pragma: no cover
             # .opt-1.pyc and .opt-2.pyc. However, it seems that for bytecode-only module distribution, we always
             # need to use the .pyc extension.
             dest_path += '.pyc'
-            obj_path = compile_pymodule(name, src_path, workpath=pycs_dir, code_cache=code_cache)
+            if inspect.signature(compile_pymodule).parameters.get("optimize", None) is None:  # Pyinstaller < 6.10.0
+                obj_path = compile_pymodule(name, src_path, pycs_dir, code_cache=code_cache)
+            else:
+                obj_path = compile_pymodule(name, src_path, pycs_dir, optimize=-1, code_cache=code_cache)
             #
             data_pure_module = (dest_path, obj_path, "DATA")
             # data_pure_module = (dest_path, src_path, "DATA")

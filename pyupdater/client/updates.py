@@ -112,8 +112,8 @@ def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cov
     """
     if admin:
         import win32con
-        from win32com.shell.shell import ShellExecuteEx
-        from win32com.shell import shellcon
+        from win32com.shell.shell import ShellExecuteEx # noqa
+        from win32com.shell import shellcon # noqa
 
         ShellExecuteEx(
             nShow=win32con.SW_SHOWNORMAL,
@@ -361,12 +361,14 @@ class Restarter(object):  # pragma: no cover
             if os.path.isfile(temp_updater_filepath):
                 os.remove(temp_updater_filepath)
             shutil.copyfile(updater_filepath, temp_updater_filepath)
+            log.debug("Starting update process", temp_updater_filepath, updater_args)
             win_run(temp_updater_filepath, updater_args)
         else:
             self._extract_update()
             self._create_update_script(restart=restart, check_permissions=check_permissions, one_dir=one_dir)
             log.debug("Starting update using batch file")
             win_run(self.bat_file, admin=False)
+        log.debug("Finishing the process")
         os._exit(0)
 
     def _extract_update(self):
@@ -462,9 +464,12 @@ class LibUpdate(object):
     data (dict): Info dict
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, proxy=None, ssl_cert=None):
         if data is None:
             return
+
+        self.proxy = proxy
+        self.ssl_cert = ssl_cert
         # A key used in the version meta data dictionary
         self._updates_key = settings.UPDATES_KEY
 
@@ -818,6 +823,8 @@ class LibUpdate(object):
                     max_download_retries=self.max_download_retries,
                     headers=self.headers,
                     http_timeout=self.http_timeout,
+                    proxy=self.proxy,
+                    ssl_cert=self.ssl_cert,
                 )
             result = fd.download_verify_write()
             if result:
@@ -850,9 +857,9 @@ class AppUpdate(LibUpdate):  # pragma: no cover
         data (dict): Info dict
     """
 
-    def __init__(self, data):
+    def __init__(self, data, **kwargs):
         self._is_win = get_system() == "win"
-        super(AppUpdate, self).__init__(data)
+        super(AppUpdate, self).__init__(data, **kwargs)
 
     def extract_restart(self, check_permissions: bool = True):
         """Will extract the update, overwrite the current binary,

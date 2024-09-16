@@ -116,6 +116,8 @@ class Client(object):
         test = kwargs.get("test", False)
         data_dir = kwargs.get("data_dir")
         headers = kwargs.get("headers")
+        self.proxy = kwargs.get("proxy", None)
+        self.ssl_cert = kwargs.get("ssl_cert", None)
 
         # 3rd Party downloader
         self.downloader = kwargs.get("downloader")
@@ -225,10 +227,15 @@ class Client(object):
     def refresh(self):
         """Will download and verify the version manifest."""
         try:
+            self.verified = False
             self._get_signing_key()
             self._get_update_manifest()
+            if not self.verified:
+                return False
+            return True
         except Exception as error:
             print(traceback.format_exc())
+            return False
 
     def update_check(self, name, version, channel="stable", strict=True, limit_date: float = 0.0, allow_downgrade: bool = False):
         """Checks for available updates
@@ -359,9 +366,9 @@ class Client(object):
         if app is True:
             # AppUpdate is a subclass of LibUpdate that add methods
             # to restart the application
-            return AppUpdate(data)
+            return AppUpdate(data, proxy=self.proxy, ssl_cert=self.ssl_cert)
         else:
-            return AppUpdate(data)
+            return AppUpdate(data, proxy=self.proxy, ssl_cert=self.ssl_cert)
 
     def add_progress_hook(self, cb):
         """Add a download progress callback function to the list of progress
@@ -473,6 +480,9 @@ class Client(object):
                         max_download_retries=self.max_download_retries,
                         headers=self.headers,
                         http_timeout=self.http_timeout,
+                        proxy=self.proxy,
+                        ssl_cert=self.ssl_cert,
+
                     )
                 data = fd.download_verify_return()
                 try:
@@ -510,6 +520,7 @@ class Client(object):
                     max_download_retries=self.max_download_retries,
                     headers=self.headers,
                     http_timeout=self.http_timeout,
+                    proxy=self.proxy,
                 )
             data = fd.download_verify_return()
             try:
@@ -548,12 +559,12 @@ class Client(object):
 
         data = self._get_manifest_from_http()
         print(data)
-        print("GETTING MANIFEST FROM DISK")
-        print(self.data_dir)
-        print(self.version_file)
-        if data is None:
-            data = self._get_manifest_from_disk()
-        print(data)
+        # print("GETTING MANIFEST FROM DISK")
+        # print(self.data_dir)
+        # print(self.version_file)
+        # if data is None:
+        #     data = self._get_manifest_from_disk()
+        # print(data)
 
         if data is not None:
             try:

@@ -112,8 +112,8 @@ def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cov
     """
     if admin:
         import win32con
-        from win32com.shell.shell import ShellExecuteEx
-        from win32com.shell import shellcon
+        from win32com.shell.shell import ShellExecuteEx # noqa
+        from win32com.shell import shellcon # noqa
 
         ShellExecuteEx(
             nShow=win32con.SW_SHOWNORMAL,
@@ -124,6 +124,51 @@ def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cov
         )
     else:
         subprocess.Popen([command] + args)
+
+def get_version(name, plat, channel, easy_data, strict, limit_date_ts=0.0):
+    target_version = None
+
+    version_options = []
+    alpha_versions = []
+    beta_versions = []
+    stable_versions = []
+    for version_str, version_data in easy_data["updates"][name].items():
+        version_date_ts = version_data[plat].get("date", 0)
+        version = Version(version_str, format=VersionFormat.FULL)
+        if version_date_ts and limit_date_ts and version_date_ts > limit_date_ts:
+            continue
+        if version.channel == "alpha":
+            alpha_versions.append(version)
+        elif version.channel == "beta":
+            beta_versions.append(version)
+        elif version.channel == "stable":
+            stable_versions.append(version)
+        else:
+            log.debug("Failed to fetch version channel, {}".format(str(version)))
+            continue
+
+    log.debug("Alpha str: %s", str(max(alpha_versions)))
+    log.debug("Beta str: %s", str(max(beta_versions)))
+    log.debug("Stable str: %s", str(max(stable_versions)))
+
+    if strict is False:
+        return max(version_options)
+
+    if alpha_versions is True and channel == "alpha":
+        target_version = max(alpha_versions)
+
+    if beta_versions is True and channel == "beta":
+        target_version = max(beta_versions)
+
+    if stable_versions is True and channel == "stable":
+        target_version = max(stable_versions)
+
+    if target_version is not None:
+        log.debug("Highest version: %s", target_version)
+        return target_version
+    else:
+        log.info('No updates for "%s" on %s exists', name, plat)
+        return target_version
 
 
 def get_highest_version(name, plat, channel, easy_data, strict):
@@ -156,21 +201,39 @@ def get_highest_version(name, plat, channel, easy_data, strict):
     version_options = []
 
     alpha_available = False
-    alpha_str = easy_data.get(version_key_alpha)
+    raw_alpha_ver = easy_data.get(version_key_alpha)
+    if isinstance(raw_alpha_ver, dict):
+        alpha_str = raw_alpha_ver["version"]
+    elif isinstance(raw_alpha_ver, str):
+        alpha_str = raw_alpha_ver
+    else:
+        alpha_str = None
     if alpha_str is not None:
         log.debug("Alpha str: %s", alpha_str)
         alpha = Version(alpha_str, format=VersionFormat.FULL)
         version_options.append(alpha)
         alpha_available = True
     beta_available = False
-    beta_str = easy_data.get(version_key_beta)
+    raw_beta_ver = easy_data.get(version_key_beta)
+    if isinstance(raw_beta_ver, dict):
+        beta_str = raw_beta_ver["version"]
+    elif isinstance(raw_beta_ver, str):
+        beta_str = raw_beta_ver
+    else:
+        beta_str = None
     if beta_str is not None:
         log.debug("Beta str: %s", beta_str)
         beta = Version(beta_str, format=VersionFormat.FULL)
         version_options.append(beta)
         beta_available = True
 
-    stable_str = easy_data.get(version_key_stable)
+    raw_stable_ver = easy_data.get(version_key_stable)
+    if isinstance(raw_stable_ver, dict):
+        stable_str = raw_stable_ver["version"]
+    elif isinstance(raw_stable_ver, str):
+        stable_str = raw_stable_ver
+    else:
+        stable_str = None
     stable_available = False
     if stable_str is not None:
         log.debug("Stable str: %s", stable_str)
@@ -298,6 +361,7 @@ class Restarter(object):  # pragma: no cover
             if os.path.isfile(temp_updater_filepath):
                 os.remove(temp_updater_filepath)
             shutil.copyfile(updater_filepath, temp_updater_filepath)
+            log.debug("Starting update process", updater_filepath, temp_updater_filepath)
             win_run(temp_updater_filepath, updater_args)
         else:
             self._extract_update()
@@ -399,9 +463,11 @@ class LibUpdate(object):
     data (dict): Info dict
     """
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, proxy=None):
         if data is None:
             return
+
+        self.proxy = proxy
         # A key used in the version meta data dictionary
         self._updates_key = settings.UPDATES_KEY
 
@@ -481,9 +547,7 @@ class LibUpdate(object):
         self.strategy = data.get("strategy", UpdateStrategy.DEFAULT)
 
         # The latest version available
-        self.latest = get_highest_version(
-            self.name, self.platform, self.channel, self.easy_data, self.strict
-        )
+        self.latest = data.get("target_version")
 
         # The name of the current versions update archive.
         # Will be used to check if the current archive is available for a
@@ -497,7 +561,7 @@ class LibUpdate(object):
         # self.latest = Version(self.latest, format=VersionFormat.FULL)
 
         self.filename = LibUpdate._get_filename(
-            self.name, self.latest, self.platform, self.easy_data
+            self.name, str(self.latest), self.platform, self.easy_data
         )
         assert self.filename is not None
 
@@ -511,7 +575,7 @@ class LibUpdate(object):
         ######Returns (str): User friendly version string
         """
         if self._version == "":
-            self._version = gen_user_friendly_version(self.latest)
+            self._version = gen_user_friendly_version(str(self.latest))
         return self._version
 
     def is_downloaded(self):
@@ -757,6 +821,7 @@ class LibUpdate(object):
                     max_download_retries=self.max_download_retries,
                     headers=self.headers,
                     http_timeout=self.http_timeout,
+                    proxy=self.proxy,
                 )
             result = fd.download_verify_write()
             if result:
@@ -789,9 +854,9 @@ class AppUpdate(LibUpdate):  # pragma: no cover
         data (dict): Info dict
     """
 
-    def __init__(self, data):
+    def __init__(self, data, **kwargs):
         self._is_win = get_system() == "win"
-        super(AppUpdate, self).__init__(data)
+        super(AppUpdate, self).__init__(data, **kwargs)
 
     def extract_restart(self, check_permissions: bool = True):
         """Will extract the update, overwrite the current binary,

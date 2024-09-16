@@ -366,7 +366,8 @@ class PackageHandler(object):
                 _updates[p.name][p.version][p.platform] = info
 
             # Add each package to latest section separated by release channel
-            json_data["latest"][p.name][p.channel][p.platform] = {"version": p.version, "date": p.date}
+            #json_data["latest"][p.name][p.channel][p.platform] = {"version": p.version, "date": p.date}
+            json_data["latest"][p.name][p.channel][p.platform] = p.version
         return json_data
 
     def _write_json_to_file(self, json_data):

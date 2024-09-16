@@ -5,18 +5,24 @@
       "Acme": {
         "4.1.0.2.0": {
           "win": {
-            "file_hash": "2e903a43195b407fea5ae3af78e8326ca5667a88361a1e07100bef3a59e8f5b3",
-            "file_size": 14698528,
+            "file_hash": "dbc06bedfecafa34597447b267b7ae8304e0b8e36d172a171db4e346ea5862b3",
+            "file_size": 47884979,
             "filename": "Acme-win-4.1.zip",
-            "date": 1719470172.934408
+            "date": 1723620359.111777,
+            "patch_name": "Acme-win-stable-423",
+            "patch_hash": "353471ff6977a50c5a94417b7b70a3104a4c8579aeb3a21e6cd708ba7862a93e",
+            "patch_size": 38086738
           }
         },
         "4.2.0.2.0": {
           "win": {
-            "file_hash": "d1208adf850683b91f9e190d3ddb0dc80457f39aa7d506ac294fc8bc2b8a62ea",
-            "file_size": 7706966,
+            "file_hash": "42690ec8c82c57587637901f273b3632a31dc36cd6868d2199a9dc818a51920a",
+            "file_size": 7625522,
             "filename": "Acme-win-4.2.zip",
-            "date": 1719470179.563266
+            "date": 1723620387.151937,
+            "patch_name": "Acme-win-stable-424",
+            "patch_hash": "9085ce04a7e4f99138b23149c2c59e134947f516c26b4415711b81cb57504c30",
+            "patch_size": 2166748
           }
         }
       }
@@ -24,10 +30,7 @@
     "latest": {
       "Acme": {
         "stable": {
-          "win": {
-            "version": "4.2.0.2.0",
-            "date": 1719470179.563266
-          }
+          "win": "4.2.0.2.0"
         }
       }
     }
@@ -36,7 +39,7 @@
   "sync_threshold": 3,
   "py_repo_config": {
     "patches": {
-      "Acme": 407
+      "Acme": 424
     },
     "package": {
       "Acme": {

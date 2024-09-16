@@ -23,6 +23,8 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------
 from __future__ import print_function, unicode_literals
+
+import datetime
 import logging
 import multiprocessing
 import os
@@ -187,6 +189,7 @@ class PackageHandler(object):
                 # Add package hash
                 new_pkg.file_hash = gph(new_pkg.filename)
                 new_pkg.file_size = in_bytes(new_pkg.filename)
+                new_pkg.date = datetime.datetime.now().timestamp()
 
                 PackageHandler._update_file_list(self.version_data, new_pkg)
 
@@ -316,6 +319,7 @@ class PackageHandler(object):
             "file_hash": package_info.file_hash,
             "file_size": package_info.file_size,
             "filename": package_info.filename,
+            "date": package_info.date,
         }
 
         # Adding patch info if available
@@ -362,6 +366,7 @@ class PackageHandler(object):
                 _updates[p.name][p.version][p.platform] = info
 
             # Add each package to latest section separated by release channel
+            #json_data["latest"][p.name][p.channel][p.platform] = {"version": p.version, "date": p.date}
             json_data["latest"][p.name][p.channel][p.platform] = p.version
         return json_data
 

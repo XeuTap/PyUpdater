@@ -27,8 +27,36 @@
 class ClientConfig(object):
     APP_NAME = "Acme"
     COMPANY_NAME = "Digital"
-    UPDATE_URLS = ["http://localhost:9015/"]
+    UPDATE_URLS = ["http://localhost:9002/"]
     PUBLIC_KEY = "rRp4eJzzsPxN1nLXBOuLCqI33HWTridHKJpNnDSUlbU"
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
 
     USE_CUSTOM_DIR = True
 
