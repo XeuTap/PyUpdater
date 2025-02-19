@@ -43,6 +43,7 @@ from python_dynamodb_lock.python_dynamodb_lock import DynamoDBLockClient, Dynamo
 from pyupdater import settings
 from pyupdater.settings import StorageLocation
 from pyupdater.utils import JSONStore
+from pyupdater.utils.meta import Singleton
 
 log = logging.getLogger(__name__)
 
@@ -118,14 +119,8 @@ class S3Storage(BaseStorage):
         self.bucket.upload_fileobj(output_data, self.path)
 
 
-class VersionMetaStorage:  # Singleton
-    _instance: Self
+class VersionMetaStorage(metaclass=Singleton):  # Singleton
     version_meta: dict
-
-    def __new__(cls):
-        if not hasattr(cls, '_instance'):
-            cls._instance = super(VersionMetaStorage, cls).__new__(cls)
-        return cls._instance
 
     def __init__(self):
         if settings.STORAGE_LOCATION == StorageLocation.LOCAL:
