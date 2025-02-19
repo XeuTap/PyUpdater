@@ -46,7 +46,7 @@ from dsdev_utils.system import get_system
 from pyupdater import settings
 from pyupdater.client.downloader import FileDownloader, get_hash
 from pyupdater.client.patcher import Patcher
-from pyupdater.core.package_handler.package import remove_previous_versions
+from pyupdater.core.package.package import remove_previous_versions
 from pyupdater.utils.exceptions import ClientError
 
 log = logging.getLogger()

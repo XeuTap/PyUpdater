@@ -31,9 +31,12 @@ from dsdev_utils.paths import ChDir, remove_any
 from dsdev_utils.terminal import ask_yes_no, get_correct_answer
 
 from importlib.metadata import version
+
+from pyupdater.core import PyUpdater
+
 VERSION_NUM = version("PyUpdater")
 
-from pyupdater import PyUpdater, settings
+from pyupdater import settings
 from pyupdater.cli.helpers import (
     initial_setup,
     print_plugin_settings,

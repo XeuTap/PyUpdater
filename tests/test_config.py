@@ -26,7 +26,8 @@ from __future__ import unicode_literals
 
 import os
 
-from pyupdater.utils.config import Config, ConfigManager
+from pyupdater.utils.config import Config
+from pyupdater.core.configmanager import ConfigManager
 
 
 class DevConfig(object):

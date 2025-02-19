@@ -45,7 +45,7 @@ print(find_packages())
 
 setup(
     name="PyUpdater",
-    version="4.6.7",
+    version="4.6.8",
     description="Python Auto Update Library for Pyinstaller",
     long_description=readme,
     long_description_content_type="text/markdown",

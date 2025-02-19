@@ -30,9 +30,9 @@ from appdirs import user_log_dir
 from dsdev_utils.logger import logging_formatter
 
 from pyupdater import settings
-from pyupdater.core import PyUpdater
-
-__all__ = ["PyUpdater"]
+# from pyupdater.core import PyUpdater
+#
+# __all__ = ["PyUpdater"]
 
 
 log = logging.getLogger(__name__)

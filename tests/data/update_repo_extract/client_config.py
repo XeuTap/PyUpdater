@@ -485,3 +485,7 @@ class ClientConfig(object):
     USE_CUSTOM_DIR = True
 
     USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True
+
+    USE_CUSTOM_DIR = True

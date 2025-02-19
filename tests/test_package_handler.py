@@ -31,9 +31,9 @@ from dsdev_utils.paths import ChDir
 import pytest
 
 from pyupdater import settings
-from pyupdater.core.package_handler import PackageHandler
-from pyupdater.core.package_handler.package import Package, parse_platform
-from pyupdater.core.package_handler.patch import Patch
+from pyupdater.core.package.package_handler import PackageHandler
+from pyupdater.core.package.package import Package, parse_platform
+from pyupdater.core.package.patch import Patch
 from pyupdater.utils.config import Config
 from pyupdater.utils.exceptions import PackageHandlerError
 
