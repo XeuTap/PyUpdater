@@ -119,13 +119,13 @@ class S3Storage(BaseStorage):
 
 
 class VersionMetaStorage:  # Singleton
-    __instance: Self
+    _instance: Self
     version_meta: dict
 
     def __new__(cls):
-        if not hasattr(cls, '__instance'):
-            cls.__instance = super(VersionMetaStorage, cls).__new__(cls)
-        return cls.__instance
+        if not hasattr(cls, '_instance'):
+            cls._instance = super(VersionMetaStorage, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
         if settings.STORAGE_LOCATION == StorageLocation.LOCAL:
