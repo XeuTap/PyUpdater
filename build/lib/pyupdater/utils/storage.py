@@ -123,7 +123,7 @@ class VersionMetaStorage:  # Singleton
     version_meta: dict
 
     def __new__(cls):
-        if not hasattr(cls, 'instance'):
+        if not hasattr(cls, '__instance'):
             cls.__instance = super(VersionMetaStorage, cls).__new__(cls)
         return cls.__instance
 
@@ -132,6 +132,7 @@ class VersionMetaStorage:  # Singleton
             warnings.warn("The storage location is set as local. Never mix it with other locations to avoid losing version data.")
             self.storage = LocalStorage(os.path.join(settings.CONFIG_DATA_FOLDER, settings.VERSION_META_FILE))
         elif settings.STORAGE_LOCATION == StorageLocation.AWS:
+            print("The storage location is set as aws.")
             self.storage = S3Storage(
                 os.path.join(settings.STORAGE_BUCKET_KEY, settings.VERSION_META_FILE))
         else:
