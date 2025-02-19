@@ -123,7 +123,7 @@ class VersionMetaStorage:  # Singleton
     version_meta: dict
 
     def __new__(cls):
-        if not hasattr(cls, 'instance'):
+        if not hasattr(cls, '__instance'):
             cls.__instance = super(VersionMetaStorage, cls).__new__(cls)
         return cls.__instance
 
