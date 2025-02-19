@@ -37,7 +37,7 @@ from dsdev_utils.paths import ChDir
 
 from pyupdater import settings
 from pyupdater.utils import get_size_in_bytes as in_bytes
-from pyupdater.utils.storage import Storage
+from pyupdater.utils.storage import Storage, VersionMetaStorage
 
 from .package import remove_previous_versions, Package
 from .patch import make_patch, Patch
@@ -59,6 +59,7 @@ class PackageHandler(object):
 
         # Version manifest file
         self.version_data = None
+        self.version_storage = VersionMetaStorage()
 
         # Specifies if the config file needs to be loaded
         self.config_loaded = False
@@ -88,7 +89,7 @@ class PackageHandler(object):
     def _setup(self):
         self._setup_work_dirs()
         if self.config_loaded is False:
-            self.version_data = self._load_version_file()
+            self.version_data = self.version_storage.as_dict()
             self.config = self._load_config()
             self.config_loaded = True
 
@@ -115,7 +116,8 @@ class PackageHandler(object):
         )
         PackageHandler._update_version_file(self.version_data, pkg_manifest)
 
-        self._write_json_to_file(self.version_data)
+        self.version_storage.set_data(self.version_data)
+        self.version_storage.sync()
         self._write_config_to_file(self.config)
         self._move_packages(pkg_manifest)
 
@@ -139,16 +141,6 @@ class PackageHandler(object):
             if not os.path.exists(d):
                 log.info("Creating dir: %s", d)
                 os.mkdir(d)
-
-    def _load_version_file(self):
-        # If version file is found its loaded to memory
-        # If no version file is found then one is created.
-        json_data = self.db.load(settings.CONFIG_DB_KEY_VERSION_META)
-        if json_data is None:  # pragma: no cover
-            log.warning("Version file not found")
-            json_data = {"updates": {}}
-            log.debug("Created new version file")
-        return json_data
 
     def _load_config(self):
         # Loads config from db if exists.
@@ -369,11 +361,6 @@ class PackageHandler(object):
             #json_data["latest"][p.name][p.channel][p.platform] = {"version": p.version, "date": p.date}
             json_data["latest"][p.name][p.channel][p.platform] = p.version
         return json_data
-
-    def _write_json_to_file(self, json_data):
-        # Writes json data to disk
-        log.debug("Saving version meta-data")
-        self.db.save(settings.CONFIG_DB_KEY_VERSION_META, json_data)
 
     def _write_config_to_file(self, json_data):
         log.debug("Saving config data")

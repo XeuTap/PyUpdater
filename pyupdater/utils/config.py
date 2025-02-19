@@ -107,7 +107,7 @@ class ConfigManager(object):
 
     # Writes client config to client_config.py
     def write_config_py(self, obj):
-        keypack_data = self.db.load(settings.CONFIG_DB_KEY_KEYPACK)
+        keypack_data = self.db.keypack
         if keypack_data is None:
             log.debug("*** Keypack data is None ***")
             public_key = None

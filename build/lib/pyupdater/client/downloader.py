@@ -134,13 +134,14 @@ class FileDownloader(object):
         self.http_timeout = kwargs.get("http_timeout")
 
         proxy = kwargs.get("proxy", None)
+        ssl_cert = kwargs.get("ssl_cert", None)
 
         if self.verify is True:
-            self.http_pool = self._get_http_pool(proxy=proxy)
+            self.http_pool = self._get_http_pool(proxy=proxy, ssl_cert=ssl_cert)
         else:
-            self.http_pool = self._get_http_pool(proxy=proxy, secure=False)
+            self.http_pool = self._get_http_pool(proxy=proxy, secure=False, ssl_cert=ssl_cert)
 
-    def _get_http_pool(self, secure=True, proxy: dict | None = None):
+    def _get_http_pool(self, secure=True, proxy: dict | None = None, ssl_cert: str | None = None):
         if proxy is None or not isinstance(proxy, dict):
             if secure:
                 _http = urllib3.PoolManager(
@@ -153,11 +154,15 @@ class FileDownloader(object):
         else:
             proxy_url = proxy["url"]
             proxy_headers = urllib3.util.make_headers(proxy_basic_auth=proxy.get("auth", ""))
+            if ssl_cert:
+                ca_cert = ssl_cert
+            else:
+                ca_cert = certifi.where()
             if secure:
                 _http = urllib3.ProxyManager(
                     proxy_url,
                     cert_reqs=str("CERT_REQUIRED"),
-                    ca_certs=certifi.where(),
+                    ca_certs=ca_cert,
                     timeout=self.http_timeout,
                     proxy_headers=proxy_headers,
                 )

@@ -117,6 +117,7 @@ class Client(object):
         data_dir = kwargs.get("data_dir")
         headers = kwargs.get("headers")
         self.proxy = kwargs.get("proxy", None)
+        self.ssl_cert = kwargs.get("ssl_cert", None)
 
         # 3rd Party downloader
         self.downloader = kwargs.get("downloader")
@@ -365,9 +366,9 @@ class Client(object):
         if app is True:
             # AppUpdate is a subclass of LibUpdate that add methods
             # to restart the application
-            return AppUpdate(data, proxy=self.proxy)
+            return AppUpdate(data, proxy=self.proxy, ssl_cert=self.ssl_cert)
         else:
-            return AppUpdate(data, proxy=self.proxy)
+            return AppUpdate(data, proxy=self.proxy, ssl_cert=self.ssl_cert)
 
     def add_progress_hook(self, cb):
         """Add a download progress callback function to the list of progress
@@ -480,6 +481,8 @@ class Client(object):
                         headers=self.headers,
                         http_timeout=self.http_timeout,
                         proxy=self.proxy,
+                        ssl_cert=self.ssl_cert,
+
                     )
                 data = fd.download_verify_return()
                 try:

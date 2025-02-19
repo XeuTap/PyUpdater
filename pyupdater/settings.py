@@ -23,11 +23,14 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------
 from __future__ import unicode_literals
+
+import datetime
+import os
 import struct
 import sys
+from enum import StrEnum
 
 from dsdev_utils import system
-
 
 APP_NAME = "PyUpdater"
 APP_AUTHOR = "Digital Sapphire"
@@ -40,7 +43,6 @@ CONFIG_FILE_USER = "config.pyu"
 
 CONFIG_DB_KEY_APP_CONFIG = "app_config"
 CONFIG_DB_KEY_KEYPACK = "keypack"
-CONFIG_DB_KEY_VERSION_META = "version_meta"
 CONFIG_DB_KEY_PY_REPO_CONFIG = "py_repo_config"
 
 DEFAULT_CLIENT_CONFIG = ["client_config.py"]
@@ -68,3 +70,41 @@ UPDATER_FOLDER = "updater"
 VERSION_FILE_FILENAME = "versions.gz"
 VERSION_FILE_FILENAME_COMPAT = "versions.gz"
 KEY_FILE_FILENAME = "keys.gz"
+
+
+class StorageLocation(StrEnum):
+    LOCAL = "local"
+    AWS = "aws"
+
+
+VERSION_META_FILE = "version_meta.json"
+STORAGE_LOCATION = StorageLocation(os.environ.get("PYU_STORAGE_LOCATION", StorageLocation.LOCAL.value))
+STORAGE_BUCKET_NAME = os.environ.get("PYU_STORAGE_BUCKET_NAME", None)
+STORAGE_BUCKET_REGION = os.environ.get("PYU_STORAGE_BUCKET_REGION", None)
+STORAGE_BUCKET_KEY = os.environ.get("PYU_STORAGE_BUCKET_KEY", "")
+STORAGE_BUCKET_SIGNATURE_VERSION = "s3v4"
+STORAGE_LOCK_KEY = "version_meta_lock"
+if STORAGE_LOCATION != StorageLocation.LOCAL:
+    if STORAGE_BUCKET_NAME is None:
+        raise Exception("PYU_STORAGE_BUCKET_NAME must be set in environment if PYU_STORAGE_LOCATION is not local")
+    if STORAGE_BUCKET_REGION is None:
+        raise Exception("PYU_STORAGE_BUCKET_REGION must be set in environment if PYU_STORAGE_LOCATION is not local")
+
+OFFLINE_PUBLIC_KEY = "PYU_OFFLINE_PUBLIC"
+APP_PRIVATE_KEY = "PYU_APP_PRIVATE"
+UPLOAD_APP_PUBLIC_KEY = "PYU_UPLOAD_APP_PUBLIC"
+UPLOAD_SIGNATURE_KEY = "PYU_UPLOAD_SIGNATURE"
+
+DEFAULT_S3STORAGE_EXPIRY_PERIOD = 2
+DEFAULT_S3STORAGE_LEASE_DURATION = 30
+DEFAULT_S3STORAGE_SAFE_PERIOD = 20
+DEFAULT_S3STORAGE_HEARTBEAT_PERIOD = 10
+DEFAULT_S3STORAGE_RETRY_PERIOD = 1
+DEFAULT_S3STORAGE_RETRY_TIMEOUT = 40
+
+S3STORAGE_EXPIRY_PERIOD = datetime.timedelta(days=float(os.environ.get("PYU_S3STORAGE_EXPIRY_PERIOD", DEFAULT_S3STORAGE_EXPIRY_PERIOD)))
+S3STORAGE_LEASE_DURATION = datetime.timedelta(minutes=float(os.environ.get("PYU_S3STORAGE_LEASE_DURATION", DEFAULT_S3STORAGE_LEASE_DURATION)))
+S3STORAGE_SAFE_PERIOD = datetime.timedelta(minutes=float(os.environ.get("PYU_S3STORAGE_SAFE_PERIOD", DEFAULT_S3STORAGE_SAFE_PERIOD)))
+S3STORAGE_HEARTBEAT_PERIOD = datetime.timedelta(minutes=float(os.environ.get("PYU_S3STORAGE_HEARTBEAT_PERIOD", DEFAULT_S3STORAGE_HEARTBEAT_PERIOD)))
+S3STORAGE_RETRY_PERIOD = datetime.timedelta(minutes=float(os.environ.get("PYU_S3STORAGE_RETRY_PERIOD", DEFAULT_S3STORAGE_RETRY_PERIOD)))
+S3STORAGE_RETRY_TIMEOUT = datetime.timedelta(minutes=float(os.environ.get("PYU_S3STORAGE_RETRY_TIMEOUT", DEFAULT_S3STORAGE_RETRY_TIMEOUT)))
