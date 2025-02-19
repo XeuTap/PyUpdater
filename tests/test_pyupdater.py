@@ -34,7 +34,7 @@ from dsdev_utils.paths import ChDir, remove_any
 import filelock
 import pytest
 
-from pyupdater import PyUpdater
+from pyupdater.core import PyUpdater
 from tconfig import TConfig
 
 AUTO_UPDATE_PAUSE = 30

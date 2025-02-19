@@ -2,9 +2,9 @@
 
 
 a = Analysis(
-    ['C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_extract\\app_extract_01.py'],
+    ['C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_extract\\app_extract_02.py'],
     pathex=['C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_extract', 'C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_extract'],
-    binaries=[('C:\\TRAFOLO\\repo\\pyupdater_source\\tests\\data\\update_repo_extract\\updater.exe', '.')],
+    binaries=[],
     datas=[],
     hiddenimports=[],
     hookspath=['C:\\TRAFOLO\\repo\\pyupdater_source\\pyupdater\\hooks'],

@@ -3,7 +3,7 @@
   "sync_threshold": 3,
   "py_repo_config": {
     "patches": {
-      "Acme": 429
+      "Acme": 433
     },
     "package": {
       "Acme": {
