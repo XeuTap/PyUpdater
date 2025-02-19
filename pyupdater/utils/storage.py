@@ -84,14 +84,14 @@ class S3Storage(BaseStorage):
         aws_config = Config(signature_version=settings.STORAGE_BUCKET_SIGNATURE_VERSION)
         dynamodb_resource = boto3.resource('dynamodb', region_name=settings.STORAGE_BUCKET_REGION)
         lock_client = DynamoDBLockClient(dynamodb_resource,
-                                         expiry_period=datetime.timedelta(days=settings.S3STORAGE_EXPIRY_PERIOD),
-                                         lease_duration=datetime.timedelta(minutes=settings.S3STORAGE_LEASE_DURATION),
-                                         safe_period=datetime.timedelta(minutes=settings.S3STORAGE_SAFE_PERIOD),
-                                         heartbeat_period=datetime.timedelta(minutes=settings.S3STORAGE_HEARTBEAT_PERIOD),
+                                         expiry_period=settings.S3STORAGE_EXPIRY_PERIOD,
+                                         lease_duration=settings.S3STORAGE_LEASE_DURATION,
+                                         safe_period=settings.S3STORAGE_SAFE_PERIOD,
+                                         heartbeat_period=settings.S3STORAGE_HEARTBEAT_PERIOD,
                                          )
         self.lock = lock_client.acquire_lock(settings.STORAGE_LOCK_KEY,
-                                             retry_period=datetime.timedelta(minutes=settings.S3STORAGE_RETRY_PERIOD),
-                                             retry_timeout=datetime.timedelta(minutes=settings.S3STORAGE_RETRY_TIMEOUT),
+                                             retry_period=settings.S3STORAGE_RETRY_PERIOD,
+                                             retry_timeout=settings.S3STORAGE_RETRY_TIMEOUT,
                                              )
         s3 = boto3.resource("s3", config=aws_config, region_name=settings.STORAGE_BUCKET_REGION)
         self.bucket = s3.Bucket(settings.STORAGE_BUCKET_NAME)

@@ -437,7 +437,7 @@ class JSONStore(DictMixin):
                 continue
             if isinstance(v, JSONStore) is True:
                 continue
-            if k in ["__weakref__", "__module__", "__dict__", "__doc__"]:
+            if k in ["__weakref__", "__module__", "__dict__", "__doc__", "__annotations__"]:
                 continue
             _data[k] = v
         return _data

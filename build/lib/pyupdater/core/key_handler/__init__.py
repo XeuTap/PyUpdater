@@ -32,7 +32,7 @@ import os
 from nacl.signing import SigningKey
 
 from pyupdater import settings
-from pyupdater.utils.storage import Storage
+from pyupdater.utils.storage import Storage, VersionMetaStorage
 from pyupdater.utils.encoding import UnpaddedBase64Encoder
 
 
@@ -91,7 +91,7 @@ class KeyHandler(object):
         log.debug("Loading private key")
 
         # Loading keypack data from .pyupdater/config.pyu
-        keypack_data = self.db.load(settings.CONFIG_DB_KEY_KEYPACK)
+        keypack_data = self.db.keypack
         private_key = None
         if keypack_data is not None:
             try:
@@ -160,7 +160,7 @@ class KeyHandler(object):
         log.debug("Created gzipped version manifest in deploy dir")
 
     def _write_key_file(self):
-        keypack_data = self.db.load(settings.CONFIG_DB_KEY_KEYPACK)
+        keypack_data = self.db.keypack
         if keypack_data is None:
             log.error("Private Key not found. Please import a keypack & try again")
             return
@@ -173,13 +173,8 @@ class KeyHandler(object):
 
     def _load_update_data(self):
         log.debug("Loading version data")
-        update_data = self.db.load(settings.CONFIG_DB_KEY_VERSION_META)
+        update_data = VersionMetaStorage().as_dict()
         # If update_data is None, create a new one
-        if update_data is None:
-            update_data = {}
-            log.error("Version meta data not found")
-            self.db.save(settings.CONFIG_DB_KEY_VERSION_META, update_data)
-            log.debug("Created new version meta data")
         log.debug("Version file loaded")
 
         return copy.deepcopy(update_data)
