@@ -58,7 +58,7 @@ from pyupdater import settings
 from pyupdater.hooks import get_hook_dir
 from pyupdater.utils.pyinstaller_compat import pyi_makespec, ArgSaver
 from pyupdater.utils import create_asset_archive, make_archive
-from pyupdater.utils.config import ConfigManager
+from pyupdater.core.configmanager import ConfigManager
 
 log = logging.getLogger(__name__)
 

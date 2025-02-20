@@ -78,7 +78,11 @@ class StorageLocation(StrEnum):
 
 
 VERSION_META_FILE = "version_meta.json"
-STORAGE_LOCATION = StorageLocation(os.environ.get("PYU_STORAGE_LOCATION", StorageLocation.LOCAL.value))
+_storage_location = os.environ.get("PYU_STORAGE_LOCATION", None)
+if _storage_location:
+    STORAGE_LOCATION = StorageLocation(_storage_location)
+else:
+    STORAGE_LOCATION = None
 STORAGE_BUCKET_NAME = os.environ.get("PYU_STORAGE_BUCKET_NAME", None)
 STORAGE_BUCKET_REGION = os.environ.get("PYU_STORAGE_BUCKET_REGION", None)
 STORAGE_BUCKET_KEY = os.environ.get("PYU_STORAGE_BUCKET_KEY", "")

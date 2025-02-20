@@ -32,7 +32,7 @@ import pytest
 from pyupdater.utils import make_archive
 
 from pyupdater.utils.builder import ExternalLib
-from pyupdater.utils.config import ConfigManager
+from pyupdater.core.configmanager import ConfigManager
 
 CONFIG = {"APP_NAME": "PyUpdater Test", "COMPANY_NAME": "ACME", "UPDATE_PATCHES": True}
 

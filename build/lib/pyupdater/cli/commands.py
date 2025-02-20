@@ -32,7 +32,7 @@ from dsdev_utils.terminal import ask_yes_no, get_correct_answer
 
 from importlib.metadata import version
 
-from pyupdater.core import PyUpdater
+from pyupdater.core.pyupdater import PyUpdater
 
 VERSION_NUM = version("PyUpdater")
 
@@ -48,10 +48,11 @@ from pyupdater.cli.helpers import (
     setup_plugin,
     setup_urls,
 )
-from pyupdater.core.key_handler.keys import Keys, KeyImporter
+from pyupdater.core.keypack.keys import Keys, KeyImporter
 from pyupdater.utils import check_repo, get_http_pool, PluginManager
 from pyupdater.utils.builder import Builder, ExternalLib
-from pyupdater.utils.config import Config, ConfigManager
+from pyupdater.utils.config import Config
+from pyupdater.core.configmanager import ConfigManager
 from pyupdater.utils.exceptions import UploaderError, UploaderPluginError
 
 log = logging.getLogger(__name__)
