@@ -123,6 +123,9 @@ class VersionMetaStorage(metaclass=Singleton):  # Singleton
     version_meta: dict
 
     def __init__(self):
+        if settings.STORAGE_LOCATION is None:
+            raise RuntimeError(
+                "PYU_STORAGE_LOCATION environment variable not set. Provide the storage location [local, aws]")
         if settings.STORAGE_LOCATION == StorageLocation.LOCAL:
             warnings.warn("The storage location is set as local. Never mix it with other locations to avoid losing version data.")
             self.storage = LocalStorage(os.path.join(settings.CONFIG_DATA_FOLDER, settings.VERSION_META_FILE))
