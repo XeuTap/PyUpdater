@@ -105,6 +105,7 @@ class Patcher(object):
         self.current_filename = kwargs.get("current_filename")
 
         self.current_file_hash = kwargs.get("current_file_hash")
+        self.ssl_cert = kwargs.get("ssl_cert")
 
         file_info = self._get_info(self.name, self.current_version, option="file")
         if self.current_filename is None:
@@ -307,6 +308,7 @@ class Patcher(object):
                         max_download_retries=self.max_download_retries,
                         headers=self.headers,
                         http_timeout=self.http_timeout,
+                        ssl_cert=self.ssl_cert,
                     )
 
                 # Attempt to download resource
