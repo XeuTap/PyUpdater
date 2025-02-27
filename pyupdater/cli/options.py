@@ -66,9 +66,9 @@ def add_archive_parser(subparsers):
     archive_parser = subparsers.add_parser(
         "archive",
         help="Archive an asset "
-        "which needs updating. Can be "
-        "another executable, .so, .dll, "
-        ".img, etc.",
+             "which needs updating. Can be "
+             "another executable, .so, .dll, "
+             ".img, etc.",
         usage="%(prog)s [opts] filename",
     )
     archive_parser.add_argument(
@@ -170,8 +170,8 @@ def add_package_parser(subparsers):
         "-P",
         "--process",
         help="Adds update metadata to version file & "
-        "moves files from the new to deploy "
-        "directory.",
+             "moves files from the new to deploy "
+             "directory.",
         action="store_true",
         dest="process",
     )
@@ -211,8 +211,8 @@ def add_settings_parser(subparsers):
     settings_parser.add_argument(
         "--config-path",
         help="Path to place your client config. "
-        "You'll need to import this file to ini"
-        "tialize the update process.",
+             "You'll need to import this file to ini"
+             "tialize the update process.",
         action="store_true",
     )
     settings_parser.add_argument(
@@ -254,6 +254,12 @@ def add_version_parser(subparsers):
     version_parser.add_argument("--dummy", help=argparse.SUPPRESS)
 
 
+def add_utils_parser(subparsers):
+    version_parser = subparsers.add_parser("validate",
+                                           help="Checks the version and if it is present in the version meta returns 1, otherwise returns 0")
+    version_parser.add_argument("--version", type=str, required=True, help="Version in string format")
+
+
 def get_parser():
     parser = make_parser()
     subparsers = make_subparser(parser)
@@ -269,4 +275,5 @@ def get_parser():
     add_settings_parser(subparsers)
     add_upload_parser(subparsers)
     add_version_parser(subparsers)
+    add_utils_parser(subparsers)
     return parser

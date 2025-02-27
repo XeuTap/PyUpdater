@@ -26,7 +26,9 @@ import io
 import json
 import logging
 import os
+import sys
 
+from dsdev_utils.helpers import Version
 from dsdev_utils.paths import ChDir, remove_any
 from dsdev_utils.terminal import ask_yes_no, get_correct_answer
 
@@ -201,7 +203,7 @@ def _cmd_settings(*args):  # pragma: no cover
 # Initialize PyUpdater repo
 def _cmd_init(*args):  # pragma: no cover
     if not os.path.exists(
-        os.path.join(settings.CONFIG_DATA_FOLDER, settings.CONFIG_FILE_USER)
+            os.path.join(settings.CONFIG_DATA_FOLDER, settings.CONFIG_FILE_USER)
     ):
         # Load a basic config.
         config = Config()
@@ -447,3 +449,19 @@ def _cmd_upload(*args):  # pragma: no cover
 # Print the version of PyUpdater to the console.
 def _cmd_version(*args):
     print("PyUpdater {}".format(VERSION_NUM))
+
+
+def _cmd_validate(*args):
+    from pprint import pprint
+    from pyupdater.utils.storage import VersionMetaStorage
+
+    ns = args[0]
+    version_str = ns.version
+    print("Provided version: {}".format(version_str))
+    version_storage = VersionMetaStorage(lock=False).as_dict()
+    #pprint(version_storage)
+    target_version = Version(version_str)
+    version_found = version_storage["updates"]["TRAFOLO"].get(str(target_version), False)
+    print("Version data found: {}".format(version_found))
+    exit_code = int(bool(version_found))
+    sys.exit(exit_code)
