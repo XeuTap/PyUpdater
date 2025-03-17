@@ -28,6 +28,7 @@ import logging
 import os
 import sys
 
+from dsdev_utils import system
 from dsdev_utils.helpers import Version
 from dsdev_utils.paths import ChDir, remove_any
 from dsdev_utils.terminal import ask_yes_no, get_correct_answer
@@ -35,6 +36,7 @@ from dsdev_utils.terminal import ask_yes_no, get_correct_answer
 from importlib.metadata import version
 
 from pyupdater.core.pyupdater import PyUpdater
+from pyupdater.settings import StorageLocation
 
 VERSION_NUM = version("PyUpdater")
 
@@ -444,6 +446,7 @@ def _cmd_upload(*args):  # pragma: no cover
         log.info("Upload successful")
     else:
         log.error("Upload failed!")
+        sys.exit(1)
 
 
 # Print the version of PyUpdater to the console.
@@ -452,16 +455,51 @@ def _cmd_version(*args):
 
 
 def _cmd_validate(*args):
-    from pprint import pprint
     from pyupdater.utils.storage import VersionMetaStorage
+    from pyupdater.utils.boto_session import get_session
 
     ns = args[0]
     version_str = ns.version
-    print("Provided version: {}".format(version_str))
+    log.debug("Provided version: {}".format(version_str))
     version_storage = VersionMetaStorage(lock=False).as_dict()
+    if not version_storage:
+        log.info("Version meta not found, skipping")
+        sys.exit(0)
     #pprint(version_storage)
     target_version = Version(version_str)
     version_found = version_storage["updates"]["TRAFOLO"].get(str(target_version), False)
-    print("Version data found: {}".format(version_found))
-    exit_code = int(bool(version_found))
-    sys.exit(exit_code)
+    log.info("Version data found: {}".format(version_found))
+
+    if settings.STORAGE_LOCATION != StorageLocation.AWS or not version_found:
+        exit_code = int(bool(version_found))  # 1 if version is present, 0 otherwise
+        sys.exit(exit_code)
+
+    # Check if the package exists in S3 storage
+
+    bucket_name = os.environ.get(u'PYU_AWS_BUCKET')
+    if bucket_name is None:
+        raise UploaderError(u'Bucket name is not set')
+    bucket_key = os.environ.get(u'PYU_AWS_BUCKET_KEY', '')
+
+    session = get_session()
+    s3 = session.client('s3')
+
+    cm = ConfigManager()
+    app_name = cm.get_app_name()
+    patch_filename = f"{app_name}-{system.get_system()}-{version_str}.zip"
+
+    s3_filepath = os.path.join(bucket_key, patch_filename)
+    s3_filepath = s3_filepath.replace(os.sep, "/")
+
+    try:
+        log.debug(f"Trying to find package {s3_filepath} in {bucket_name}")
+        s3.get_object(Bucket=bucket_name, Key=s3_filepath)
+        log.debug(f"Package found in {bucket_name}")
+        sys.exit(1)
+    except s3.exceptions.NoSuchKey:  # Target patch not found
+        log.debug("Package not found in S3 bucket")
+        sys.exit(0)
+    except Exception as err:
+        log.error(err, exc_info=True)
+
+    sys.exit(1)
