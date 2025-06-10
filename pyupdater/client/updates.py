@@ -155,13 +155,13 @@ def get_version(name, plat, channel, easy_data, strict, limit_date_ts=0.0):
     if strict is False:
         return max(version_options)
 
-    if alpha_versions is True and channel == "alpha":
+    if alpha_versions and channel == "alpha":
         target_version = max(alpha_versions)
 
-    if beta_versions is True and channel == "beta":
+    if beta_versions and channel == "beta":
         target_version = max(beta_versions)
 
-    if stable_versions is True and channel == "stable":
+    if stable_versions and channel == "stable":
         target_version = max(stable_versions)
 
     if target_version is not None:
