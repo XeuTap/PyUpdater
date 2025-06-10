@@ -114,3 +114,7 @@ class UtilsError(STDError):
 
     def __init__(self, *args, **kwargs):
         super(UtilsError, self).__init__(*args, **kwargs)
+
+
+class AuthorizationError(Exception):
+    pass
