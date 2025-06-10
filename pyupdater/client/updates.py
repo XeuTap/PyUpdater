@@ -112,8 +112,8 @@ def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cov
     """
     if admin:
         import win32con
-        from win32com.shell.shell import ShellExecuteEx # noqa
-        from win32com.shell import shellcon # noqa
+        from win32com.shell.shell import ShellExecuteEx  # noqa
+        from win32com.shell import shellcon  # noqa
 
         ShellExecuteEx(
             nShow=win32con.SW_SHOWNORMAL,
@@ -125,6 +125,7 @@ def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cov
     else:
         subprocess.Popen([command] + args)
 
+
 def get_version(name, plat, channel, easy_data, strict, limit_date_ts=0.0):
     target_version = None
 
@@ -132,7 +133,7 @@ def get_version(name, plat, channel, easy_data, strict, limit_date_ts=0.0):
     alpha_versions = []
     beta_versions = []
     stable_versions = []
-    for version_str, version_data in easy_data["updates"][name].items():
+    for version_str, version_data in easy_data.dict["updates"][name].items():
         version_date_ts = version_data[plat].get("date", 0)
         version = Version(version_str, format=VersionFormat.FULL)
         if version_date_ts and limit_date_ts and version_date_ts > limit_date_ts:
