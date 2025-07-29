@@ -131,7 +131,7 @@ class FileDownloader(object):
         # Extra headers
         self.headers = kwargs.get("headers")
 
-        self.http_timeout = kwargs.get("http_timeout")
+        self.http_timeout = kwargs.get("http_timeout", 30)
 
         proxy = kwargs.get("proxy", None)
         ssl_cert = kwargs.get("ssl_cert", None)
@@ -400,6 +400,7 @@ class FileDownloader(object):
                     preload_content=False,
                     retries=max_download_retries,
                     decode_content=False,
+                    timeout=self.http_timeout,
                 )
             except urllib3.exceptions.SSLError:
                 log.info("SSL cert not verified")
