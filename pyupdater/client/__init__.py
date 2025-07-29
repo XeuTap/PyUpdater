@@ -482,7 +482,6 @@ class Client(object):
                         http_timeout=self.http_timeout,
                         proxy=self.proxy,
                         ssl_cert=self.ssl_cert,
-
                     )
                 data = fd.download_verify_return()
                 try:
