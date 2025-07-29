@@ -38,9 +38,9 @@ with open("README.md", "r") as f:
     readme = f.read()
 
 
+
 extra_s3 = "PyUpdater-s3-Plugin >= 4.0.5"
 extra_scp = "PyUpdater-scp-Plugin >= 4.0"
-
 print(find_packages())
 
 setup(

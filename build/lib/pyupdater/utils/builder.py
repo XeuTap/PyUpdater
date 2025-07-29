@@ -121,7 +121,7 @@ class Builder(object):  # pragma: no cover
         # Build executable
         self._build(spec_file_path, build_args)
 
-        self._override_dependencies(spec_file_path)
+        #self._override_dependencies(spec_file_path)
         # Archive executable
         self._archive(temp_name)
         finished = time.time() - start
