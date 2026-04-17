@@ -37,7 +37,7 @@ import threading
 import zipfile
 import ctypes
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 from dsdev_utils.helpers import Version, VersionFormat
 from dsdev_utils.paths import ChDir, get_mac_dot_app_dir, remove_any
@@ -104,7 +104,7 @@ def win_unhide_file(file):  # pragma: no cover
         raise ctypes.WinError()
 
 
-def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cover
+def win_run(command: str, args: Iterable = None, admin=False, cwd: Optional[str] = None):  # pragma: no cover
     if args is None:
         args = []
     """
@@ -123,7 +123,7 @@ def win_run(command: str, args: Iterable = None, admin=False):  # pragma: no cov
             lpParameters=" ".join('"{}"'.format(arg) for arg in args),
         )
     else:
-        subprocess.Popen([command] + args)
+        subprocess.Popen([command] + args, cwd=cwd)
 
 
 def get_version(name, plat, channel, easy_data, strict, limit_date_ts=0.0):
@@ -363,7 +363,7 @@ class Restarter(object):  # pragma: no cover
                 os.remove(temp_updater_filepath)
             shutil.copyfile(updater_filepath, temp_updater_filepath)
             log.debug("Starting update process", temp_updater_filepath, updater_args)
-            win_run(temp_updater_filepath, updater_args)
+            win_run(temp_updater_filepath, updater_args, cwd=updater_folder)
         else:
             self._extract_update()
             self._create_update_script(restart=restart, check_permissions=check_permissions, one_dir=one_dir)
