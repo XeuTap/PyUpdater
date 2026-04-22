@@ -123,7 +123,7 @@ class Builder(object):  # pragma: no cover
 
         #self._override_dependencies(spec_file_path)
         # Archive executable
-        self._archive(temp_name)
+        self._archive(self.app_name)
         finished = time.time() - start
         log.info("Build finished in {:.2f} seconds.".format(finished))
 

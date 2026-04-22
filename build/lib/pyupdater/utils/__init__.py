@@ -273,18 +273,23 @@ def make_archive(name: str, target: str, version: str, archive_format="default")
     log.debug("Temp file: %s", temp_file)
     actual_dir = os.getcwd()
     # Remove file if it exists. Found during testing...
-    if os.path.exists(temp_file):
-        paths.remove_any(temp_file)
+    # if os.path.exists(temp_file):
+    #     paths.remove_any(temp_file)
     temp_folder = get_system()
     if os.path.isfile(target):
         os.makedirs(temp_folder, exist_ok=True)
-        shutil.copy(target, temp_file, follow_symlinks=True)
-        if os.path.isfile(target):
+
+        if Path(target) == Path(temp_file):
             shutil.copy(target, os.path.join(temp_folder, temp_file))
-        if os.path.isfile(os.path.join(temp_folder, target)):
-            if os.path.isfile(os.path.join(temp_folder, temp_file)):
-                os.remove(os.path.join(temp_folder, temp_file))
-            os.rename(os.path.join(temp_folder, target), os.path.join(temp_folder, temp_file))
+        else:
+            shutil.copy(target, temp_file, follow_symlinks=True)
+            if os.path.isfile(target):
+                shutil.copy(target, os.path.join(temp_folder, temp_file))
+            if os.path.isfile(os.path.join(temp_folder, target)):
+                if os.path.isfile(os.path.join(temp_folder, temp_file)):
+                    os.remove(os.path.join(temp_folder, temp_file))
+                os.rename(os.path.join(temp_folder, target), os.path.join(temp_folder, temp_file))
+
         file_dir = temp_folder
         base_dir = None
     #     shutil.copytree(Path(target).parent, name, symlinks=True)
