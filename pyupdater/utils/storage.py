@@ -79,11 +79,22 @@ class S3Storage(BaseStorage):
     bucket: Any
     lock: DynamoDBLock | None
 
-    def __init__(self, path: str | LiteralString | bytes, lock: bool,  dynamodb_lock_key: Optional[str],
-                 aws_s3_region: str, aws_dynamodb_region: Optional[str], aws_config: Config, aws_s3_bucket_name: str,
-                 dynamodb_lock_expiry_period: Optional[datetime], dynamodb_lock_lease_duration: Optional[datetime], dynamodb_lock_safe_period: Optional[datetime],
-                 dynamodb_lock_heartbeat_period: Optional[datetime], dynamodb_lock_retry_period: Optional[datetime], dynamodb_lock_retry_timeout: Optional[datetime]
-                 ):
+    def __init__(
+        self,
+        path: str | LiteralString | bytes,
+        lock: bool,
+        dynamodb_lock_key: Optional[str] = None,
+        aws_s3_region: str = None,
+        aws_dynamodb_region: Optional[str] = None,
+        aws_config: Config = None,
+        aws_s3_bucket_name: str = None,
+        dynamodb_lock_expiry_period: Optional[datetime] = None,
+        dynamodb_lock_lease_duration: Optional[datetime] = None,
+        dynamodb_lock_safe_period: Optional[datetime] = None,
+        dynamodb_lock_heartbeat_period: Optional[datetime] = None,
+        dynamodb_lock_retry_period: Optional[datetime] = None,
+        dynamodb_lock_retry_timeout: Optional[datetime] = None,
+    ):
         super().__init__(path)
         # acquire lock
         self.lock = None
