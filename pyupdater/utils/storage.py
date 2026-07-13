@@ -40,7 +40,6 @@ import botocore
 from botocore.config import Config
 from python_dynamodb_lock.python_dynamodb_lock import DynamoDBLockClient, DynamoDBLock
 
-from build.lib.pyupdater.utils import config
 from pyupdater import settings
 from pyupdater.settings import StorageLocation
 from pyupdater.utils import JSONStore
