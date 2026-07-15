@@ -45,6 +45,8 @@ from pyupdater.settings import StorageLocation
 from pyupdater.utils import JSONStore
 from pyupdater.utils.meta import Singleton
 
+from typing import Optional
+
 log = logging.getLogger(__name__)
 
 
