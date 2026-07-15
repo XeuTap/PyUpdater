@@ -45,6 +45,8 @@ from pyupdater.settings import StorageLocation
 from pyupdater.utils import JSONStore
 from pyupdater.utils.meta import Singleton
 
+from typing import Optional
+
 log = logging.getLogger(__name__)
 
 
@@ -78,25 +80,43 @@ class S3Storage(BaseStorage):
     bucket: Any
     lock: DynamoDBLock | None
 
-    def __init__(self, path: str | LiteralString | bytes, lock: bool):
+    def __init__(
+        self,
+        path: str | LiteralString | bytes,
+        lock: bool,
+        dynamodb_lock_key: Optional[str] = None,
+        aws_s3_region: str = None,
+        aws_dynamodb_region: Optional[str] = None,
+        aws_config: Config = None,
+        aws_s3_bucket_name: str = None,
+        dynamodb_lock_expiry_period: Optional[datetime] = None,
+        dynamodb_lock_lease_duration: Optional[datetime] = None,
+        dynamodb_lock_safe_period: Optional[datetime] = None,
+        dynamodb_lock_heartbeat_period: Optional[datetime] = None,
+        dynamodb_lock_retry_period: Optional[datetime] = None,
+        dynamodb_lock_retry_timeout: Optional[datetime] = None,
+    ):
         super().__init__(path)
         # acquire lock
         self.lock = None
-        aws_config = Config(signature_version=settings.STORAGE_BUCKET_SIGNATURE_VERSION)
         if lock:
-            dynamodb_resource = boto3.resource('dynamodb', region_name=settings.STORAGE_BUCKET_REGION)
+            if not dynamodb_lock_key:
+                raise ValueError("dynamodb lock key is required whenever lock is used.")
+            if not aws_dynamodb_region:
+                aws_dynamodb_region = aws_s3_region # we're just assuming same region as s3 is being used.
+            dynamodb_resource = boto3.resource('dynamodb', region_name=aws_dynamodb_region)
             lock_client = DynamoDBLockClient(dynamodb_resource,
-                                             expiry_period=settings.S3STORAGE_EXPIRY_PERIOD,
-                                             lease_duration=settings.S3STORAGE_LEASE_DURATION,
-                                             safe_period=settings.S3STORAGE_SAFE_PERIOD,
-                                             heartbeat_period=settings.S3STORAGE_HEARTBEAT_PERIOD,
+                                             expiry_period=dynamodb_lock_expiry_period,
+                                             lease_duration=dynamodb_lock_lease_duration,
+                                             safe_period=dynamodb_lock_safe_period,
+                                             heartbeat_period=dynamodb_lock_heartbeat_period,
                                              )
-            self.lock = lock_client.acquire_lock(settings.STORAGE_LOCK_KEY,
-                                                 retry_period=settings.S3STORAGE_RETRY_PERIOD,
-                                                 retry_timeout=settings.S3STORAGE_RETRY_TIMEOUT,
+            self.lock = lock_client.acquire_lock(dynamodb_lock_key,
+                                                 retry_period=dynamodb_lock_retry_period,
+                                                 retry_timeout=dynamodb_lock_retry_timeout,
                                                  )
-        s3 = boto3.resource("s3", config=aws_config, region_name=settings.STORAGE_BUCKET_REGION)
-        self.bucket = s3.Bucket(settings.STORAGE_BUCKET_NAME)
+        s3 = boto3.resource("s3", config=aws_config, region_name=aws_s3_region)
+        self.bucket = s3.Bucket(aws_s3_bucket_name)
         atexit.register(self.cleanup)
 
     def cleanup(self) -> None:
@@ -133,8 +153,19 @@ class VersionMetaStorage(metaclass=Singleton):  # Singleton
         elif settings.STORAGE_LOCATION == StorageLocation.AWS:
             print("The storage location is set as aws.")
             self.storage = S3Storage(
-                os.path.join(settings.STORAGE_BUCKET_KEY, settings.VERSION_META_FILE),
-                lock,
+                path=os.path.join(settings.STORAGE_BUCKET_KEY, settings.VERSION_META_FILE),
+                lock=lock,
+                aws_s3_region=settings.STORAGE_BUCKET_REGION,
+                aws_config=Config(signature_version=settings.STORAGE_BUCKET_SIGNATURE_VERSION),
+                aws_s3_bucket_name=settings.STORAGE_BUCKET_NAME,
+                aws_dynamodb_region=settings.STORAGE_BUCKET_REGION,
+                dynamodb_lock_expiry_period=settings.S3STORAGE_EXPIRY_PERIOD,
+                dynamodb_lock_lease_duration=settings.S3STORAGE_LEASE_DURATION,
+                dynamodb_lock_safe_period=settings.S3STORAGE_SAFE_PERIOD,
+                dynamodb_lock_heartbeat_period=settings.S3STORAGE_HEARTBEAT_PERIOD,
+                dynamodb_lock_retry_timeout=settings.S3STORAGE_RETRY_TIMEOUT,
+                dynamodb_lock_retry_period=settings.S3STORAGE_RETRY_PERIOD,
+                dynamodb_lock_key=settings.STORAGE_LOCK_KEY,
             )
         else:
             raise NotImplementedError
