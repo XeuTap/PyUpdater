@@ -87,7 +87,7 @@ STORAGE_BUCKET_NAME = os.environ.get("PYU_STORAGE_BUCKET_NAME", None)
 STORAGE_BUCKET_REGION = os.environ.get("PYU_STORAGE_BUCKET_REGION", None)
 STORAGE_BUCKET_KEY = os.environ.get("PYU_STORAGE_BUCKET_KEY", "")
 STORAGE_BUCKET_SIGNATURE_VERSION = "s3v4"
-STORAGE_LOCK_KEY = "version_meta_lock"
+STORAGE_LOCK_KEY = os.environ.get("PYU_STORAGE_LOCK_KEY", "version_meta_lock")
 if STORAGE_LOCATION is not None and STORAGE_LOCATION != StorageLocation.LOCAL:
     if STORAGE_BUCKET_NAME is None:
         raise Exception("PYU_STORAGE_BUCKET_NAME must be set in environment if PYU_STORAGE_LOCATION is not local")
